@@ -1,0 +1,14 @@
+{
+	"NETPROPHET2_DIR": "/path/to/NetProphet_2.0",
+	"RESOURCES_DIR": "RESOURCES",
+	"OUTPUT_DIR": "OUTPUT",
+	"FILENAME_EXPRESSION_DATA": "data.expr",
+	"FILENAME_DE_ADJMTR": "signed.de.adj",
+	"FILENAME_GENES": "genes",
+	"FILENAME_REGULATORS": "regulators",
+	"FILENAME_SAMPLE_CONDITIONS": "conditions",
+	"DBD_PID_DIR": "DBD_PIDS",
+	"FILENAME_PROMOTERS": "promoter.fasta",
+	"MOTIF_THRESHOLD": 16,
+	"FILENAME_NETPROPHET2_NETWORK": "netprophet2_network.adjmtr"
+}
