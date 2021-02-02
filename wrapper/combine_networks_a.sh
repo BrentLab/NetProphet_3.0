@@ -32,21 +32,6 @@ do
                 p_target)
                     p_target="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
-                p_net_lasso)
-                    p_net_lasso="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_de)
-                    p_net_de="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_bart)
-                    p_net_bart="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_pwm)
-                    p_net_pwm="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_new)
-                    p_net_new="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
                 p_net_binding)
                     p_net_binding="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
@@ -134,6 +119,18 @@ do
                flag_intercept)
                    flag_intercept="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                    ;;
+               l_path_net_1)
+                   l_path_net_1="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                   ;;
+               l_name_net_1)
+                   l_name_net_1="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                   ;;
+               l_path_net_2)
+                   l_path_net_2="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                   ;;
+               l_name_net_2)
+                   l_name_net_2="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                   ;;
             esac;;
         h)
             echo "usage"
@@ -188,11 +185,8 @@ then
     # ------------------------------------------------------------------------ #    
     echo " - split networks: networks with DE and without DE.."
     python ${p_src_code}code/combine_networks_split_networks_based_on_perturbed_reg.py \
-        --p_net_lasso ${p_net_lasso} \
-        --p_net_de ${p_net_de} \
-        --p_net_bart ${p_net_bart} \
-        --p_net_pwm ${p_net_pwm} \
-        --p_net_new ${p_net_new} \
+        --l_path_net ${l_path_net_1} \
+        --l_name_net ${l_name_net_1} \
         --p_net_binding ${p_net_binding} \
         --p_out_dir ${p_out_tmp}
 
@@ -202,6 +196,8 @@ then
         ls -l /home/dabid/.conda/envs/netprophet/bin >> ${p_out_logs}tmp.txt
     fi
 
+    source ${p_src_code}wrapper/helper.sh
+    
     # ------------------------------------------------------------------------ #
     # |              *** Combine networks having perturbation ***            | # 
     # | here DE network is used as a source of information in the training/  | #
@@ -209,51 +205,8 @@ then
     # ------------------------------------------------------------------------ #
     if [ -d ${p_out_tmp}with_de ]
     then
-    
-        if [ ${p_net_lasso} != "NONE" ]
-        then
-            p_net_lasso_1=${p_out_tmp}with_de/net_lasso.tsv
-        else
-            p_net_lasso_1="NONE"
-        fi
-
-        if [ ${p_net_de} != "NONE" ]
-        then
-            p_net_de_1=${p_out_tmp}with_de/net_de.tsv
-        else
-            p_net_de_1="NONE"
-        fi
-
-        if [ ${p_net_bart} != "NONE" ]
-        then
-            p_net_bart_1=${p_out_tmp}with_de/net_bart.tsv
-        else
-            p_net_bart_1="NONE"
-        fi
-
-        if [ ${p_net_binding} != "NONE" ]
-        then
-            p_net_binding_1=${p_out_tmp}with_de/net_binding.tsv
-        else
-            p_net_binding_1="NONE"
-        fi
-
-        if [ ${p_net_pwm} != "NONE" ]
-        then
-            p_net_pwm_1=${p_out_tmp}with_de/net_pwm.tsv
-        else
-            p_net_pwm_1="NONE"
-        fi
-        
-        if [ ${p_net_new} != "NONE" ]
-        then
-            p_net_new_1=${p_out_tmp}with_de/net_new.tsv
-        else
-            p_net_new_1="NONE"
-        fi
-        
         p_net_np3_with_de=${p_out_tmp}with_de/net_np3.tsv
-        
+        l_path_net_with_de=$(create_paths ${l_name_net_1} net ${p_out_tmp}with_de/)
         if [ ${flag_slurm} == "ON" ]
         then
             mkdir -p ${p_out_logs}with_de/
@@ -262,16 +215,13 @@ then
                                     -o ${p_out_logs}with_de/combine_net_with_de_%J.out \
                                     -e ${p_out_logs}with_de/combine_net_with_de_%J.err \
                                     ${p_src_code}wrapper/combine_networks_b.sh \
-                                        --p_net_lasso ${p_net_lasso_1} \
-                                        --p_net_de ${p_net_de_1} \
-                                        --p_net_bart ${p_net_bart_1} \
-                                        --p_net_pwm ${p_net_pwm_1} \
-                                        --p_net_new ${p_net_new_1} \
-                                        --p_net_binding ${p_net_binding_1} \
+                                        --l_name_net ${l_name_net_1} \
+                                        --l_path_net ${l_path_net_with_de} \
+                                        --p_net_binding ${p_out_tmp}with_de/net_binding.tsv \
                                         --p_binding_event ${p_binding_event} \
                                         --p_out_dir ${p_out_tmp}with_de/ \
                                         --p_out_net ${p_net_np3_with_de} \
-                                        --model ${model_1} \
+                                        --model_name ${model_1} \
                                         --flag_slurm ${flag_slurm} \
                                         --l_top_edges ${l_top_edges_1[@]} \
                                         --p_src_code ${p_src_code} \
@@ -316,44 +266,9 @@ then
     # ------------------------------------------------------------------------ #
     if [ -d ${p_out_tmp}without_de ]
     then
-
-        if [ ${p_net_lasso} != "NONE" ]
-        then
-            p_net_lasso_2=${p_out_tmp}without_de/net_lasso.tsv
-        else
-            p_net_lasso_2="NONE"
-        fi
-
-        if [ ${p_net_bart} != "NONE" ]
-        then
-            p_net_bart_2=${p_out_tmp}without_de/net_bart.tsv
-        else
-            p_net_bart_2="NONE"
-        fi
-
-        if [ ${p_net_binding} != "NONE" ]
-        then
-            p_net_binding_2=${p_out_tmp}without_de/net_binding.tsv
-        else
-            p_net_binding_2="NONE"
-        fi
-
-        if [ ${p_net_pwm} != "NONE" ]
-        then
-            p_net_pwm_2=${p_out_tmp}without_de/net_pwm.tsv
-        else
-            p_net_pwm_2="NONE"
-        fi
-        
-        if [ ${p_net_new} != "NONE" ]
-        then
-            p_net_new_2=${p_out_tmp}without_de/net_new.tsv
-        else
-            p_net_new_2="NONE"
-        fi
-        
         p_net_np3_without_de=${p_out_tmp}without_de/net_np3.tsv
-    
+        l_path_net_with_de=$(create_paths ${l_name_net_2} net ${p_out_tmp}without_de/)
+        
         if [ ${flag_slurm} == "ON" ]
         then
             mkdir -p ${p_out_logs}without_de/
@@ -362,15 +277,13 @@ then
                                         -o ${p_out_logs}without_de/combine_net_without_de_%J.out \
                                         -e ${p_out_logs}without_de/combine_net_without_de_%J.err \
                                         ${p_src_code}wrapper/combine_networks_b.sh \
-                                            --p_net_lasso ${p_net_lasso_2} \
-                                            --p_net_bart ${p_net_bart_2} \
-                                            --p_net_pwm ${p_net_pwm_2} \
-                                            --p_net_new ${p_net_new_2} \
-                                            --p_net_binding ${p_net_binding_2} \
+                                            --l_name_net ${l_name_net_2} \
+                                            --l_path_net ${l_path_net_2}
+                                            --p_net_binding ${p_out_tmp}without_de/net_binding.tsv \
                                             --p_binding_event ${p_binding_event} \
                                             --p_out_dir ${p_out_tmp}without_de/ \
                                             --p_out_net ${p_net_np3_without_de} \
-                                            --model ${model_2} \
+                                            --model_name ${model_2} \
                                             --flag_slurm ${flag_slurm} \
                                             --l_top_edges ${l_top_edges_2[@]} \
                                             --p_src_code ${p_src_code} \
@@ -451,10 +364,10 @@ then
 # -------------------------------------------------------------------------- #
 else
     ${p_src_code}wrapper/combine_networks_default_coefficients.sh \
-        --p_net_lasso ${p_net_lasso} \
-        --p_net_de ${p_net_de} \
-        --p_net_bart ${p_net_bart} \
-        --p_net_pwm ${p_net_pwm} \
+        --l_name_net_1 ${l_name_net_1} \
+        --l_path_net_1 ${l_path_net_1} \
+        --l_name_net_2 ${l_name_net_2} \
+        --l_path_net_2 ${l_path_net_2} \
         --model_1 ${model_1} \
         --model_2 ${model_2} \
         --p_out_tmp ${p_out_tmp} \

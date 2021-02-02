@@ -369,6 +369,18 @@ do
           flag_run_np1="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
           flag_run_all="OFF"
           ;;
+        l_path_net_1)
+          l_path_net_1="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          ;;
+        l_name_net_1)
+          l_name_net_1="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          ;;
+        l_path_net_2)
+          l_path_net_2="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          ;;
+        l_name_net_2)
+          l_name_net_2="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          ;;
       esac;;
     
 
@@ -873,11 +885,10 @@ then
           ${p_src_code}wrapper/combine_networks_a.sh \
             --p_out_tmp ${p_out_tmp}combine_net_ldbp/ \
             --p_out_net ${p_out_net}combine_net_ldbp/ \
-            --p_net_lasso ${p_net_lasso} \
-            --p_net_bart ${p_net_bart} \
-            --p_net_pwm ${p_in_net_pwm} \
-            --p_net_new ${p_net_new} \
-            --p_net_de ${p_in_net_de} \
+            --l_path_net_1 ${l_path_net_1} \
+            --l_name_net_1 ${l_name_net_1} \
+            --l_path_net_2 ${l_path_net_2} \
+            --l_name_net_2 ${l_name_net_2} \
             --p_binding_event ${p_in_binding_event} \
             --model_1 ${model_1b} \
             --model_2 ${model_2b} \

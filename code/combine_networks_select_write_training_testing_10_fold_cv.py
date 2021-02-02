@@ -2,6 +2,7 @@ from json import load
 
 def select_write_training_testing_10_fold_cv(l_net_name
                                              , l_p_net
+                                             , p_net_binding
                                              , p_out_dir
                                              , exclude_tf
                                              , seed
@@ -46,12 +47,20 @@ def select_write_training_testing_10_fold_cv(l_net_name
             d_net_name__df[net_name] = read_csv_indexed(p_df=p_net, p_index=p_reg, p_column=p_target)
             d_net_name__df[net_name] = melt(d_net_name__df[net_name].reset_index(), id_vars='index', value_vars=l_target)
         d_net_name__df[net_name].columns = ['REGULATOR', 'TARGET', 'VALUE']
-            
+    
+    # binding data
+    df_binding = read_csv(p_net_binding, header=None, sep='\t')  
+    if len(df_binding.columns) > 3:  # this is a matrix, melt it
+        l_target = list(read_csv(p_target, header=None)[0])
+        l_reg = list(read_csv(p_reg, header=None)[0])
+        df_binding = read_csv_indexed(p_df=p_net_binding, p_index=p_reg, p_column=p_target)
+        df_binding = melt(df_binding.reset_index(), id_vars='index', value_vars=l_target)
+    df_binding.columns = ['REGULATOR', 'TARGET', 'VALUE']
     # ---------------------------------------------------------- #
     # |      *** Select reg for training and testing ***       | #
     # ---------------------------------------------------------- #
     d_fold__l_reg_training, d_fold__l_reg_testing = select_reg_for_training_testing(
-                                                                df_binding=d_net_name__df['binding']
+                                                                df_binding=df_binding
                                                                 , p_out_dir=p_out_dir
                                                                 , s=seed
                                                                 , exclude_tf=exclude_tf
@@ -71,6 +80,13 @@ def select_write_training_testing_10_fold_cv(l_net_name
             # write testing set
             df_test_net = d_net_name__df[net_name].loc[d_net_name__df[net_name]['REGULATOR'].isin(d_fold__l_reg_testing[fold]), :]
             df_test_net.to_csv(p_out_dir + 'fold' + str(fold) + '_test_' + net_name + '.tsv', header=False, index=False, sep='\t')
+        # for binding data
+        df_train_binding = df_binding.loc[df_binding['REGULATOR'].isin(d_fold__l_reg_training[fold]), :]
+        df_train_binding.to_csv(p_out_dir + 'fold' + str(fold) + '_train_binding.tsv', header=False, index=False, sep='\t')
+        # write testing set
+        df_test_binding = df_binding.loc[df_binding['REGULATOR'].isin(d_fold__l_reg_testing[fold]), :]
+        df_test_binding.to_csv(p_out_dir + 'fold' + str(fold) + '_test_binding.tsv', header=False, index=False, sep='\t')
+        
 
 
 def select_reg_for_training_testing(df_binding
@@ -152,9 +168,10 @@ def main():
         from argparse import ArgumentParser
 
         parser = ArgumentParser()
-        parser.add_argument('--l_net_name', '-l_net_name', nargs='+',
+        parser.add_argument('--l_net_name', '-l_net_name',
                             help='list of name of networks such as binding and lasso')
-        parser.add_argument('--l_p_net', '-l_p_net', nargs='+', help='list of paths of networks that names were provided')
+        parser.add_argument('--l_p_net', '-l_p_net', help='list of paths of networks that names were provided')
+        parser.add_argument('--p_net_binding', '-p_net_binding')
         parser.add_argument('--p_out_dir', '-p_out_dir', help='path of output directory for the 10-fold data')
         parser.add_argument('--exclude_tf', '-exclude_tf', help='flag to exclude tf with no supported events at top edges'
                             , default='OFF')
@@ -166,8 +183,9 @@ def main():
 
         args = parser.parse_args()
 
-        select_write_training_testing_10_fold_cv(l_net_name=args.l_net_name
-                                                 , l_p_net=args.l_p_net
+        select_write_training_testing_10_fold_cv(l_net_name=args.l_net_name.split(',')
+                                                 , l_p_net=args.l_p_net.split(',')
+                                                 , p_net_binding=args.p_net_binding
                                                  , p_out_dir=args.p_out_dir
                                                  , exclude_tf=args.exclude_tf
                                                  , seed=args.seed

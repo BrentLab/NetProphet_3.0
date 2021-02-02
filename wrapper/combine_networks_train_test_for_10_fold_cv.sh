@@ -13,21 +13,6 @@ do
         ;;
     -)
         case "${OPTARG}" in
-            p_net_lasso)
-                p_net_lasso="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_de)
-                p_net_de="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_bart)
-                p_net_bart="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_pwm)
-                p_net_pwm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_new)
-                p_net_new="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
             p_net_binding)
                 p_net_binding="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
@@ -37,8 +22,8 @@ do
             p_src_code)
                 p_src_code="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            model)
-                model="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            model_name)
+                model_name="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
             p_out_dir)
                 p_out_dir="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -57,6 +42,12 @@ do
                 ;;
             flag_intercept)
                 flag_intercept="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
+            l_name_net)
+                l_name_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
+            l_path_net)
+                l_path_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
         esac;;
     esac
@@ -82,13 +73,9 @@ then
 fi
 
 python ${p_src_code}code/combine_networks_select_write_training_testing_10_fold_cv.py \
-  --l_net_name binding lasso de bart pwm new \
-  --l_p_net ${p_net_binding} \
-            ${p_net_lasso} \
-            ${p_net_de} \
-            ${p_net_bart} \
-            ${p_net_pwm} \
-            ${p_net_new} \
+  --p_net_binding ${p_net_binding} \
+  --l_net_name ${l_name_net} \
+  --l_p_net ${l_path_net} \
   --p_out_dir ${p_out_dir}data_cv/ \
   --seed ${seed} \
   --p_src_code ${p_src_code}
@@ -102,71 +89,20 @@ fi
 # ======================================================================================================= #
 # |                                *** TRAIN/TEST FOR COMBINING NETWORKS ***                            | #
 # ======================================================================================================= #  
+source ${p_src_code}wrapper/helper.sh
+
 echo "   - Train/Test for 10-fold CV.."
 for f in {0..9}
 do
-    # LASSO
-    if [ ${p_net_lasso} != "NONE" ]
-    then
-        p_net_lasso_train=${p_out_dir}data_cv/fold${f}_train_lasso.tsv
-        p_net_lasso_test=${p_out_dir}data_cv/fold${f}_test_lasso.tsv
-    else
-        p_net_lasso_train="NONE"
-        p_net_lasso_test="NONE"
-    fi
-    # DE
-    if [ ${p_net_de} != "NONE" ]
-    then
-        p_net_de_train=${p_out_dir}data_cv/fold${f}_train_de.tsv
-        p_net_de_test=${p_out_dir}data_cv/fold${f}_test_de.tsv
-    else
-        p_net_de_train="NONE"
-        p_net_de_test="NONE"
-    fi
-    
-    # BART
-    if [ ${p_net_bart} != "NONE" ]
-    then
-        p_net_bart_train=${p_out_dir}data_cv/fold${f}_train_bart.tsv
-        p_net_bart_test=${p_out_dir}data_cv/fold${f}_test_bart.tsv
-    else
-        p_net_bart_train="NONE"
-        p_net_bart_test="NONE"
-    fi
-    
-    # PWM
-    if [ ${p_net_pwm} != "NONE" ]
-    then
-        p_net_pwm_train=${p_out_dir}data_cv/fold${f}_train_pwm.tsv
-        p_net_pwm_test=${p_out_dir}data_cv/fold${f}_test_pwm.tsv
-    else
-        p_net_pwm_train="NONE"
-        p_net_pwm_test="NONE"
-    fi
-
-    # NEW
-    if [ ${p_net_new} != "NONE" ]
-    then
-        p_net_new_train=${p_out_dir}data_cv/fold${f}_train_new.tsv
-        p_net_new_test=${p_out_dir}data_cv/fold${f}_test_new.tsv
-    else
-        p_net_new_train="NONE"
-        p_net_new_test="NONE"
-    fi
+    l_path_net_train_fold=$(create_paths ${l_name_net} fold${f}_train ${p_out_dir}data_cv/)
+    l_path_net_test_fold=$(create_paths ${l_name_net} fold${f}_test ${p_out_dir}data_cv/)
     
     ${p_src_code}wrapper/combine_networks_train_test.sh \
-        --p_net_train_binding ${p_out_dir}data_cv/fold${f}_train_binding.tsv \
-        --p_net_train_lasso ${p_net_lasso_train} \
-        --p_net_train_de ${p_net_de_train} \
-        --p_net_train_pwm ${p_net_pwm_train} \
-        --p_net_train_new ${p_net_new_train} \
-        --p_net_train_bart ${p_net_bart_train} \
-        --p_net_test_lasso ${p_net_lasso_test} \
-        --p_net_test_de ${p_net_de_test} \
-        --p_net_test_bart ${p_net_bart_test} \
-        --p_net_test_pwm ${p_net_pwm_test} \
-        --p_net_test_new ${p_net_new_test} \
-        --model ${model} \
+        --p_binding_train ${p_out_dir}data_cv/fold${f}_train_binding.tsv \
+        --l_name_net ${l_name_net} \
+        --l_path_net_train ${l_path_net_train_fold} \
+        --l_path_net_test ${l_path_net_test_fold} \
+        --model_name ${model_name} \
         --p_out_pred_train ${p_out_dir}data_pred/fold${f}_pred_train.tsv \
         --p_out_optimal_lambda ${p_out_dir}data_pred/fold${f}_lambda.tsv \
         --p_tmp_penalize ${p_out_dir}tmp_penalize/fold${f}/ \

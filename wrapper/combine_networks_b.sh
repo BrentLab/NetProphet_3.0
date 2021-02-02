@@ -30,21 +30,6 @@ do
                 p_target)
                     p_target="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
-                p_net_lasso)
-                    p_net_lasso="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_de)
-                    p_net_de="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_bart)
-                    p_net_bart="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_pwm)
-                    p_net_pwm="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_new)
-                    p_net_new="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
                 p_net_binding)
                     p_net_binding="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
@@ -57,8 +42,8 @@ do
                 p_out_net)
                     p_out_net="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
-                model)
-                    model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                model_name)
+                    model_name="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
                 flag_slurm)
                     flag_slurm="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
@@ -98,6 +83,12 @@ do
                 flag_intercept)
                     flag_intercept="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
+                l_name_net)
+                    l_name_net="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                    ;;
+                l_path_net)
+                    l_path_net="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                    ;;
             esac;;
         h)
             echo "usage"
@@ -127,17 +118,14 @@ fi
 # ------------------------------------------------------------------------ #
 echo "all edges"
 ${p_src_code}wrapper/combine_networks_c.sh \
-    --model ${model} \
+    --model_name ${model_name} \
     --flag_slurm ${flag_slurm} \
     --p_src_code ${p_src_code} \
     --p_out_net ${p_out_net} \
     --p_out_dir ${p_out_dir} \
     --seed ${seed} \
-    --p_net_lasso ${p_net_lasso} \
-    --p_net_de ${p_net_de} \
-    --p_net_bart ${p_net_bart} \
-    --p_net_pwm ${p_net_pwm} \
-    --p_net_new ${p_net_new} \
+    --l_name_net ${l_name_net} \
+    --l_path_net ${l_path_net} \
     --p_net_binding ${p_net_binding} \
     --p_binding_event ${p_binding_event} \
     --p_out_logs ${p_out_logs} \
@@ -184,10 +172,9 @@ then
         
         python ${p_src_code}code/combine_networks_select_top_k_edges.py \
             --p_in_top_net ${p_in_top_net} \
-            --l_net_name binding lasso de bart pwm new \
-            --l_p_in_net ${p_net_binding} ${p_net_lasso} ${p_net_de} ${p_net_bart} ${p_net_pwm} ${p_net_new} \
+            --l_net_name ${l_name_net} \
+            --l_p_in_net ${l_path_net} \
             --p_out_dir ${p_out_dir}top_${top_edges}/ \
-            --l_out_fname_net net_binding.tsv net_lasso.tsv net_de.tsv net_bart.tsv net_pwm.tsv net_new.tsv \
             --top ${top_edges} \
             --p_reg ${p_reg} \
             --p_target ${p_target}

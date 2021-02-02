@@ -1,5 +1,7 @@
 #!/bin/bash
 
+flag_intercept="ON"
+
 while getopts ":h-:" OPTION
 do
     case "${OPTION}" in
@@ -9,41 +11,11 @@ do
         ;;
     -)
         case "${OPTARG}" in
-            p_net_train_binding)
-                p_net_train_binding="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            p_binding_train)
+                p_binding_train="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            p_net_train_lasso)
-                p_net_train_lasso="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_train_de)
-                p_net_train_de="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_train_bart)
-                p_net_train_bart="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_train_pwm)
-                p_net_train_pwm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_train_new)
-                p_net_train_new="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_test_lasso)
-                p_net_test_lasso="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_test_de)
-                p_net_test_de="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_test_bart)
-                p_net_test_bart="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_test_pwm)
-                p_net_test_pwm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_test_new)
-                p_net_test_new="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            model)
-                model="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            model_name)
+                model_name="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
             p_out_pred_train)
                 p_out_pred_train="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -66,6 +38,15 @@ do
             flag_intercept)
                 flag_intercept="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
+            l_name_net)
+                l_name_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
+            l_path_net_train)
+                l_path_net_train="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
+            l_path_net_test)
+                l_path_net_test="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
         esac;;
     esac
 done
@@ -76,18 +57,11 @@ then
 fi
 
 Rscript ${p_src_code}code/combine_networks_train_test.R \
-    --p_in_train_binding ${p_net_train_binding} \
-    --p_in_train_lasso ${p_net_train_lasso} \
-    --p_in_train_de ${p_net_train_de} \
-    --p_in_train_bart ${p_net_train_bart} \
-    --p_in_train_pwm ${p_net_train_pwm} \
-    --p_in_train_new ${p_net_train_new} \
-    --p_in_test_lasso ${p_net_test_lasso} \
-    --p_in_test_de ${p_net_test_de} \
-    --p_in_test_bart ${p_net_test_bart} \
-    --p_in_test_pwm ${p_net_test_pwm} \
-    --p_in_test_new ${p_net_test_new}\
-    --in_model ${model} \
+    --p_binding_train ${p_binding_train} \
+    --l_name_net ${l_name_net} \
+    --l_path_net_train ${l_path_net_train} \
+    --l_path_net_test ${l_path_net_test} \
+    --model_name ${model_name} \
     --p_out_pred_train ${p_out_pred_train} \
     --p_out_pred_test ${p_out_pred_test} \
     --p_out_model_summary ${p_out_model_summary} \

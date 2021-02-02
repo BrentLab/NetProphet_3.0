@@ -23,8 +23,8 @@ do
     case "${OPTION}" in
         -)
             case "${OPTARG}" in
-                model)
-                    model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                model_name)
+                    model_name="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
                 flag_slurm)
                     flag_slurm="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
@@ -40,21 +40,6 @@ do
                     ;;
                 seed)
                     seed="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_lasso)
-                    p_net_lasso="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_de)
-                    p_net_de="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_bart)
-                    p_net_bart="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_pwm)
-                    p_net_pwm="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                p_net_new)
-                    p_net_new="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
                 p_net_binding)
                     p_net_binding="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
@@ -90,6 +75,12 @@ do
                             l_top_edges+=("${arg}")
                         done
                     fi
+                    ;;
+                l_name_net)
+                    l_name_net="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                    ;;
+                l_path_net)
+                    l_path_net="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
              esac;;
         h)
@@ -132,8 +123,8 @@ then
     mkdir -p ${p_out_dir}data_1_fold/
     python ${p_src_code}code/combine_networks_select_write_training_testing_1_fold.py \
         --p_net_binding ${p_net_binding} \
-        --l_net_name lasso de bart pwm new \
-        --l_p_net ${p_net_lasso} ${p_net_de} ${p_net_bart} ${p_net_pwm} ${p_net_new} \
+        --l_net_name ${l_name_net} \
+        --l_p_net ${l_path_net} \
         --seed ${seed} \
         --p_out_dir ${p_out_dir}data_1_fold/ \
         --nbr_reg ${nbr_reg}
@@ -358,11 +349,8 @@ then
     fi
 
     python ${p_src_code}code/combine_networks_split_networks_based_on_binding_support.py \
-        --p_net_lasso ${p_net_lasso} \
-        --p_net_de ${p_net_de} \
-        --p_net_bart ${p_net_bart} \
-        --p_net_pwm ${p_net_pwm} \
-        --p_net_new ${p_net_new} \
+        --l_name_net ${l_name_net} \
+        --l_path_net ${l_path_net} \
         --p_net_binding ${p_net_binding} \
         --p_binding_event ${p_binding_event} \
         --p_out_dir ${p_out_dir}
@@ -371,54 +359,14 @@ then
     then
         ls -l /home/dabid/.conda/envs/netprophet/bin >> ${p_out_logs}tmp.txt
     fi
+    source ${p_src_code}wrapper/helper.sh
     
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # |      *** Combine networks (Train/Test) by 10-fold CV ***      | #
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     if [ -d ${p_out_dir}support ]
     then
-        if [ ${p_net_lasso} != "NONE" ]
-        then
-            p_net_lasso_1=${p_out_dir}support/net_lasso.tsv
-        else
-            p_net_lasso_1="NONE"
-        fi
-
-        if [ ${p_net_de} != "NONE" ]
-        then
-            p_net_de_1=${p_out_dir}support/net_de.tsv
-        else
-            p_net_de_1="NONE"
-        fi
-
-        if [ ${p_net_bart} != "NONE" ]
-        then
-            p_net_bart_1=${p_out_dir}support/net_bart.tsv
-        else
-            p_net_bart_1="NONE"
-        fi
-
-        if [ ${p_net_binding} != "NONE" ]
-        then
-            p_net_binding_1=${p_out_dir}support/net_binding.tsv
-        else
-            p_net_binding_1="NONE"
-        fi
-
-        if [ ${p_net_pwm} != "NONE" ]
-        then
-            p_net_pwm_1=${p_out_dir}support/net_pwm.tsv
-        else
-            p_net_pwm_1="NONE"
-        fi
-
-        if [ ${p_net_new} != "NONE" ]
-        then
-            p_net_new_1=${p_out_dir}support/net_new.tsv
-        else
-            p_net_new_1="NONE"
-        fi
-        
+        l_path_net_support=$(create_paths ${l_name_net} net ${p_out_dir}support/)
         p_net_np3_support=${p_out_dir}support/net_np3.tsv
 
         if [ ${flag_slurm} == "ON" ]
@@ -426,17 +374,14 @@ then
             mkdir -p ${p_out_logs}support/
             echo " - support: submit 10 jobs for training 10-fold cv.."  
             ${p_src_code}wrapper/combine_networks_train_test_for_10_fold_cv.sh \
-                --p_net_lasso ${p_net_lasso_1} \
-                --p_net_de ${p_net_de_1} \
-                --p_net_bart ${p_net_bart_1} \
-                --p_net_pwm ${p_net_pwm_1} \
-                --p_net_new ${p_net_new_1} \
-                --p_net_binding ${p_net_binding_1} \
+                --l_name_net ${l_name_net} \
+                --l_path_net ${l_path_net_support} \
+                --p_net_binding ${p_out_dir}support/net_binding.tsv \
                 --flag_slurm ${flag_slurm} \
                 --p_src_code ${p_src_code} \
-                --model ${model} \
+                --model_name ${model_name} \
                 --p_out_dir ${p_out_dir}support/ \
-                --p_net_np3 ${p_out_dir}support/net_np3.tsv \
+                --p_net_np3 ${p_net_np3_support} \
                 --seed  ${seed} \
                 --p_out_logs ${p_out_logs}support/ \
                 --flag_penalize ${flag_penalize} \
@@ -469,63 +414,16 @@ then
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     if [ -d ${p_out_dir}unsupport ]
     then
-        if [ ${p_net_lasso} != "NONE" ]
-        then
-            p_net_lasso_2=${p_out_dir}unsupport/net_lasso.tsv
-        else
-            p_net_lasso_2="NONE"
-        fi
-
-        if [ ${p_net_de} != "NONE" ]
-        then
-            p_net_de_2=${p_out_dir}unsupport/net_de.tsv
-        else
-            p_net_de_2="NONE"
-        fi
-
-        if [ ${p_net_bart} != "NONE" ]
-        then
-            p_net_bart_2=${p_out_dir}unsupport/net_bart.tsv
-        else
-            p_net_bart_2="NONE"
-        fi
-
-        if [ ${p_net_binding} != "NONE" ]
-        then
-            p_net_binding_2=${p_out_dir}unsupport/net_binding.tsv
-        else
-            p_net_binding_2="NONE"
-        fi
-
-        if [ ${p_net_pwm} != "NONE" ]
-        then
-            p_net_pwm_2=${p_out_dir}unsupport/net_pwm.tsv
-        else
-            p_net_pwm_2="NONE"
-        fi
-
-        if [ ${p_net_new} != "NONE" ]
-        then
-            p_net_new_2=${p_out_dir}unsupport/net_new.tsv
-        else
-            p_net_new_2="NONE"
-        fi
-        
+        l_path_net_unsupport=$(create_paths ${l_name_net} net ${p_out_dir}unsupport/)
+         
         mkdir -p ${p_out_dir}unsupport/data_pred/
         p_net_np3_unsupport=${p_out_dir}unsupport/data_pred/net_np3.tsv
         mkdir -p ${p_out_logs}unsupport/
         ${p_src_code}wrapper/combine_networks_train_test.sh \
-             --p_net_train_binding  ${p_net_binding_1} \
-             --p_net_train_lasso ${p_net_lasso_1} \
-             --p_net_train_de ${p_net_de_1} \
-             --p_net_train_bart ${p_net_bart_1} \
-             --p_net_train_pwm ${p_net_pwm_1} \
-             --p_net_train_new ${p_net_new_1} \
-             --p_net_test_lasso ${p_net_lasso_2} \
-             --p_net_test_de ${p_net_de_2} \
-             --p_net_test_bart ${p_net_bart_2} \
-             --p_net_test_pwm ${p_net_pwm_2} \
-             --p_net_test_new ${p_net_new_2} \
+             --p_binding_train  ${p_out_dir}support/net_binding.tsv \
+             --l_name_net ${l_name_net} \
+             --l_path_net_train ${l_path_net_support} \
+             --l_path_net_test ${l_path_net_unsupport} \
              --p_out_model ${p_out_dir}unsupport/data_pred/model.RData \
              --p_out_model_summary ${p_out_dir}unsupport/data_pred/model_summary \
              --p_out_pred_train ${p_out_dir}unsupport/data_pred/pred_train.tsv \
@@ -535,7 +433,7 @@ then
              --p_src_code ${p_src_code} \
              --flag_slurm ${flag_slurm} \
              --seed ${seed} \
-             --model ${model} \
+             --model_name ${model_name} \
              --p_out_logs ${p_out_logs}unsupport/ \
              --p_out_dir ${p_out_dir}unsupport/ \
              --flag_intercept ${flag_intercept} \

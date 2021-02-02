@@ -13,20 +13,11 @@ do
             p_net_binding)
                 p_net_binding="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            p_net_lasso)
-                p_net_lasso="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            l_name_net)
+                l_name_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            p_net_de)
-                p_net_de="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_bart)
-                p_net_bart="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_pwm)
-                p_net_pwm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_net_new)
-                p_net_new="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            l_path_net)
+                l_path_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
             p_out_dir)
                 p_out_dir="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -44,14 +35,10 @@ source activate netprophet
 ls -l /home/dabid/.conda/envs/netprophet/bin > /dev/null
 
 python ${p_src_code}code/combine_networks_select_write_training_testing_10_fold_cv.py \
-    --l_net_name binding lasso de bart pwm new \
-    --l_p_net ${p_net_binding} \
-                 ${p_net_lasso} \
-                 ${p_net_de} \
-                 ${p_net_bart} \
-                 ${p_net_pwm} \
-                 ${p_net_new} \
+    --l_net_name ${l_name_net} \
+    --l_p_net ${l_path_net} \
     --p_out_dir ${p_out_dir} \
+    --p_net_binding ${p_net_binding} \
     --seed ${seed} \
     --p_src_code ${p_src_code}
 
