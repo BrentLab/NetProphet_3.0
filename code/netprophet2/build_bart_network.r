@@ -6,7 +6,6 @@ if (!require("matrixStats")) try(install.packages("matrixStats"));
 if (!require("Matrix")) try(install.packages("Matrix"));
 if (!require("abind")) try(install.packages("abind"));
 # if (!require("restorepoint")) try(install.packages("restorepoint")); ## deprecated
-print('after loaading..')
 getBartNetwork <- function(tgtLevel, tfLevel, regMat, unperturbedTfLevel, nBin = 3, ...) {
 	# use BART to generate a network structure prediction
 	# tgtLevel: training target expression levels, in foldchange with respect to wildtype
@@ -23,11 +22,7 @@ getBartNetwork <- function(tgtLevel, tfLevel, regMat, unperturbedTfLevel, nBin =
 	#		second dimension corresponds to the identity of the perturbed regulator they are responding to
 	#		third dimenison is the idenity of the responding target gene itself
 	# returns fields including those of bartExpr, with an additional field regScore which is the signed scores of regulation likelihood
-  tgtLevel = t(as.matrix(df_expr_target))
-  tfLevel = t(as.matrix(df_expr_reg))
-  regMat = df_allowed
-  
-  set.seed(747)
+        set.seed(747)
 	require("matrixStats");
 	nTf <- ncol(tfLevel);
 	#
@@ -41,7 +36,7 @@ getBartNetwork <- function(tgtLevel, tfLevel, regMat, unperturbedTfLevel, nBin =
 	testTfLevel[ix] <- c(result$perturbedTfLevel); # filling perturbed TF levels to testTfLevel
 	#
 	# calling BART
-	barted <- bartExpr(tgtLevel = tgtLevel, tfLevel = tfLevel, regMat = regMat, testTfLevel = testTfLevel, ...);
+	barted <- bartExpr(tgtLevel = tgtLevel, tfLevel = tfLevel, regMat = regMat, testTfLevel = testTfLevel,...);
 	result <- c(result, barted);
 	#
 	# reshaping results
@@ -96,13 +91,13 @@ bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, verbose = TRUE, noi
 		}
 	}
 	# calling BART
-	barted <- bartMultiresponse(x.train = log(tfLevel), y.train = transform(tgtLevel), x.test = log(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE, ...); 
+	barted <- bartMultiresponse(x.train = log(tfLevel), y.train = transform(tgtLevel), x.test = log(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE,...); 
 	result <- c(result, barted);
 	result$predicted <- backTransform(barted$yMean); # transform the prediction back to the space of fold changes
 	result;
 }
 
-bartMultiresponse <- function(x.train, y.train, x.test = NULL, allowed, simplify = TRUE, verbose = TRUE, mpiComm, blockSize, saveTo, ...) {
+bartMultiresponse <- function(x.train, y.train, x.test = NULL, allowed, simplify = TRUE, verbose = TRUE, saveTo, ...) {
 	# wrapper for using bart on multiple responses, able to invoke mpi
 	# allowed: matrix whose ij entry tells if explanatory variable i should be used for response j; by default, if variables names are given in the colnames of x.train and y.train, every explanatory relation is allowed except for a variable explaining itself
 	# mpiComm: missing or integer; if specified, will invoke mpi on the given comm number mpiComm (see package Rmpi for details)
@@ -172,8 +167,8 @@ bartMultiresponse <- function(x.train, y.train, x.test = NULL, allowed, simplify
 		# }
 	} else { # calculate with mpi
 		require("Rmpi");
-		# try(Sys.setenv(OMPI_MCA_btl_tcp_if_include="eth0"));
-		if (mpi.comm.size(comm = mpiComm) == 0) { # initialize mpi comm if have not done so yet
+		# try(Sys.setenv(OMPI_MCA_btl_tcp_if_include="eth0"));        
+		if (mpi.comm.size(comm = mpiComm) == 0) { # initialize mpi comm if have not done so yet        
 			if (missing(blockSize)) blockSize <- floor(sqrt(nResponse));
 			mpi.spawn.Rslaves(nslaves = blockSize, comm = mpiComm);
 		}

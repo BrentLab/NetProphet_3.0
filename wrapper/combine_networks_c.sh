@@ -102,6 +102,8 @@ then
     source ${p_src_code}wrapper/helper_load_modules.sh
 fi
 
+source ${p_src_code}wrapper/helper.sh
+
 # ------------------------------------------------------------------------ #
 # |                 *** Combine networks LASSO, DE, ETC ***              | #  
 # ------------------------------------------------------------------------ #
@@ -135,71 +137,17 @@ then
         ls -l /home/dabid/.conda/envs/netprophet/bin >> ${p_out_logs}tmp.txt
     fi
     
-    # LASSO
-    if [ ${p_net_lasso} != "NONE" ]
-    then
-        p_net_lasso_train=${p_out_dir}data_1_fold/train_lasso.tsv
-        p_net_lasso_test=${p_out_dir}data_1_fold/test_lasso.tsv
-    else
-        p_net_lasso_train="NONE"
-        p_net_lasso_test="NONE"
-    fi
-
-    # DE
-    if [ ${p_net_de} != "NONE" ]
-    then
-        p_net_de_train=${p_out_dir}data_1_fold/train_de.tsv
-        p_net_de_test=${p_out_dir}data_1_fold/test_de.tsv
-    else
-        p_net_de_train="NONE"
-        p_net_de_test="NONE"
-    fi
-
-    # BART
-    if [ ${p_net_bart} != "NONE" ]
-    then
-        p_net_bart_train=${p_out_dir}data_1_fold/train_bart.tsv
-        p_net_bart_test=${p_out_dir}data_1_fold/test_bart.tsv
-    else
-        p_net_bart_train="NONE"
-        p_net_bart_test="NONE"
-    fi
+    l_path_net_1_fold_train=$(create_paths ${l_name_net} train ${p_out_dir}data_1_fold/)
+    l_path_net_1_fold_test=$(create_paths ${l_name_net} test ${p_out_dir}data_1_fold/)
     
-    # PWM
-    if [ ${p_net_pwm} != "NONE" ]
-    then
-        p_net_pwm_train=${p_out_dir}data_1_fold/train_pwm.tsv
-        p_net_pwm_test=${p_out_dir}data_1_fold/test_pwm.tsv
-    else
-        p_net_pwm_train="NONE"
-        p_net_pwm_test="NONE"
-    fi
-    
-    # NEW
-    if [ ${p_net_new} != "NONE" ]
-    then
-        p_net_new_train=${p_out_dir}data_1_fold/train_new.tsv
-        p_net_new_test=${p_out_dir}data_1_fold/test_new.tsv
-    else
-        p_net_new_train="NONE"
-        p_net_new_test="NONE"
-    fi
-
     mkdir -p ${p_out_dir}data_pred/
     
     ${p_src_code}wrapper/combine_networks_train_test.sh \
-            --p_net_train_binding ${p_out_dir}data_1_fold/train_binding.tsv \
-            --p_net_train_lasso ${p_net_lasso_train} \
-            --p_net_train_de ${p_net_de_train} \
-            --p_net_train_bart ${p_net_bart_train} \
-            --p_net_train_pwm ${p_net_pwm_train} \
-            --p_net_train_new ${p_net_new_train} \
-            --p_net_test_lasso ${p_net_lasso_test} \
-            --p_net_test_de ${p_net_de_test} \
-            --p_net_test_bart ${p_net_bart_test} \
-            --p_net_test_pwm ${p_net_pwm_test} \
-            --p_net_test_new ${p_net_new_test} \
-            --model ${model} \
+            --p_train_binding ${p_out_dir}data_1_fold/train_binding.tsv \
+            --l_name_net ${l_name_net} \
+            --l_path_net_train ${l_path_net_1_fold_train} \
+            --l_path_net_test ${l_path_net_1_fold_test} \
+            --model_name ${model_name} \
             --p_out_pred_train ${p_out_dir}data_pred/pred_train.tsv \
             --p_out_pred_test ${p_out_net} \
             --p_out_optimal_lambda ${p_out_dir}data_pred/lambda.tsv \
@@ -214,123 +162,6 @@ then
             --flag_penalize ${flag_penalize} \
             --p_out_logs ${p_out_logs} \
             --fold ""
-    # feed forward...
-    
-    echo "***FEED-FORWARD*** started for top edges: ${l_top_edges[@]}.."
-    p_in_top_net=${p_out_dir}data_pred/pred_train.tsv
-    
-    for (( i=0;i<${#l_top_edges[@]};i++ ))
-    do
-        # wait if the netprophet network file is not ready 
-        # from previous iteration
-        while [ ! -f ${p_in_top_net} ]
-        do
-            sleep 10
-        done
-        sleep 120  # to wait for the p_in_top_net file to complete writing..
-        
-        # initialize nbre of top edges and corresponding output dir
-        top_edges=${l_top_edges[i]}
-        mkdir -p ${p_out_dir}top_${top_edges}/
-        mkdir -p ${p_out_dir}top_${top_edges}/data_1_fold/
-        mkdir -p ${p_out_dir}top_${top_edges}/data_pred/
-        mkdir -p ${p_out_logs}top_${top_edges}/
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-        # |                 *** select top edges ***                  | #
-        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-        echo ""
-        echo "select top edges: ${top_edges}.."
-        source activate netprophet
-        if [ ${flag_slurm} == "ON" ]
-        then
-            ls -l /home/dabid/.conda/envs/netprophet/bin >> ${p_out_logs}tmp.txt
-        fi
-
-        python ${p_src_code}code/combine_networks_select_top_k_edges.py \
-            --p_in_top_net ${p_in_top_net} \
-            --l_net_name binding lasso de bart pwm new \
-            --l_p_in_net ${p_net_binding} ${p_net_lasso} ${p_net_de} ${p_net_bart} ${p_net_pwm} ${p_net_new} \
-            --p_out_dir ${p_out_dir}top_${top_edges}/data_1_fold/ \
-            --l_out_fname_net net_binding.tsv net_lasso.tsv net_de.tsv net_bart.tsv net_pwm.tsv net_new.tsv \
-            --top ${top_edges}
-            
-        source deactivate netprophet
-        if [ ${flag_slurm} == "ON" ]
-        then
-            ls -l /home/dabid/.conda/envs/netprophet/bin >> ${p_out_logs}tmp.txt
-        fi
-
-        if [ ${p_net_lasso} != "NONE" ]
-        then
-            p_net_lasso_top=${p_out_dir}top_${top_edges}/data_1_fold/net_lasso.tsv
-        else
-            p_net_lasso_top="NONE"
-        fi
-        
-        if [ ${p_net_de} != "NONE" ]
-        then
-            p_net_de_top=${p_out_dir}top_${top_edges}/data_1_fold/net_de.tsv
-        else
-            p_net_de_top="NONE"
-        fi
-        
-        if [ ${p_net_bart} != "NONE" ]
-        then
-            p_net_bart_top=${p_out_dir}top_${top_edges}/data_1_fold/net_bart.tsv
-        else
-            p_net_bart_top="NONE"
-        fi
-        
-        if [ ${p_net_binding} != "NONE" ]
-        then
-            p_net_binding_top=${p_out_dir}top_${top_edges}/data_1_fold/net_binding.tsv
-        else
-            p_net_binding_top="NONE"
-        fi
-        
-        if [ ${p_net_pwm} != "NONE" ]
-        then
-            p_net_pwm_top=${p_out_dir}top_${top_edges}/data_1_fold/net_pwm.tsv
-        else
-            p_net_pwm_top="NONE"
-        fi
-        
-        if [ ${p_net_new} != "NONE" ]
-        then
-            p_net_new_top=${p_out_dir}top_${top_edges}/data_1_fold/net_new.tsv
-        else
-            p_net_new_top="NONE"
-        fi
-        ${p_src_code}wrapper/combine_networks_train_test.sh \
-            --p_net_train_binding ${p_net_binding_top} \
-            --p_net_train_lasso ${p_net_lasso_top} \
-            --p_net_train_de ${p_net_de_top} \
-            --p_net_train_bart ${p_net_bart_top} \
-            --p_net_train_pwm ${p_net_pwm_top} \
-            --p_net_train_new ${p_net_new_top} \
-            --p_net_test_lasso ${p_net_lasso_test} \
-            --p_net_test_de ${p_net_de_test} \
-            --p_net_test_bart ${p_net_bart_test} \
-            --p_net_test_pwm ${p_net_pwm_test} \
-            --p_net_test_new ${p_net_new_test} \
-            --model ${model} \
-            --p_out_pred_train ${p_out_dir}top_${top_edges}/data_pred/pred_train.tsv \
-            --p_out_pred_test ${p_out_dir}top_${top_edges}/net_np3_${top_edges}.tsv \
-            --p_out_optimal_lambda ${p_out_dir}top_${top_edges}/data_pred/lambda.tsv \
-            --p_tmp_penalize ${p_out_dir}top_${top_edges}/tmp_penalize/ \
-            --p_out_model_summary ${p_out_dir}top_${top_edges}/data_pred/model_summary.txt \
-            --p_out_model ${p_out_dir}top_${top_edges}/data_pred/model.RData \
-            --p_src_code ${p_src_code} \
-            --seed ${seed} \
-            --flag_slurm ${flag_slurm} \
-            --flag_intercept ${flag_intercept} \
-            --p_out_dir ${p_out_dir}top_${top_edges}/ \
-            --flag_penalize ${flag_penalize} \
-            --p_out_logs ${p_out_logs}top_${top_edges}/ \
-            --fold ""
-        
-        p_in_top_net=${p_out_dir}top_${top_edges}/data_pred/pred_train.tsv
-    done
 
 # ------------------------------------------------------------------------ #
 # |                           *** 10-fold CV ***                         | #  
@@ -359,7 +190,7 @@ then
     then
         ls -l /home/dabid/.conda/envs/netprophet/bin >> ${p_out_logs}tmp.txt
     fi
-    source ${p_src_code}wrapper/helper.sh
+    
     
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
     # |      *** Combine networks (Train/Test) by 10-fold CV ***      | #
