@@ -1,0 +1,481 @@
+#!/bin/bash
+
+# ============================================================================= #
+# |                    **** USAGE OF NETPROPHET 3.0 ****                      | #
+# ============================================================================= #
+usage(){
+cat << EOF
+    netprophet3.0 [options]
+    
+    INPUT arguments:
+    --p_in_expr_target       : input file for expression of target genes (target x sample)
+    --p_in_expr_reg          : input file for expression of regulators (reg x sample)
+    --p_in_net_de            : input file for network of differential expression
+    --p_in_binding_event     : input file for binding events |REGULATOR|TARGET|
+    --seed                   : seed for generating the fold cross valition (default 747)
+    
+    LASSO arguments:
+    --flag_local_shrinkage   : "ON" for estimating a shrinkage parameter for every target gene, "OFF" otherwise (default "ON")
+    --flag_global_shrinkage  : "ON" for estimating a shrinkage parameter for all target genes, "OFF" otherwise (default "OFF")
+    --flag_microarray        : "MICROARRAY" for microarray expression data, "RNA-SEQ" for RNA-Seq data
+    --lasso_nbr_fold         : number of folds used for estimating lambda in lasso (optional, default 10)
+        
+    PWM arguments:
+    --p_in_promoter          : path of promoter fasta sequences for building PWM networks 
+    
+    COMBINE arguments:
+    --l_in_name_net          :
+    --l_in_path_net          :
+    --in_model_name          :
+    --flag_penalize          : "ON" or "L1", "L2", or "L1_L2" (optional, default is "ON")
+    --penalize_nbr_fold      : number of CV folds for estimating optimal lambda in penalization
+    --flag_training          : "ON-CV", or "ON-SUB" or "OFF" (optional, default is "OFF").
+    method: default coef:
+    --l_in_coef              :
+    --l_p_in_model           :
+    method: small subset     :
+    --in_nbr_reg             :
+    
+    OUTPUT arguments:
+    --p_out_dir              : path of output directory
+    
+    LOGISTIC arguments:
+    --p_src_code             : path for source of code (optional)
+    
+    SINGULARITY arguments:
+    --flag_singularity       : "ON" or "OFF", default "ON" for using singularity container 
+    --p_singularity_img      : path of singularity container
+    --p_singularity_bindpath : path of directory of output file
+    
+    SLURM arguments:
+    --flag_slurm             : "ON" for parallel (slurm) run, "OFF" for sequential run
+    --p_out_dir_logs         : output file for logs (.out & .err) for slurm runs
+    --mail_user              : mail address of the user for slurm run logs
+    --mail_type              : when to send an email to the user (default FAIL)
+    --data                   : prefix of job names for slurm jobs      
+    
+    -h                       : display usage for netprophet3.0 commandline
+    -a                       : run ALL components
+    -l                       : run only the LASSO component
+    -b                       : run only the BART component
+    -c                       : run only the COMBINE component
+    -e                       : run only the EVALUATION component 
+    
+EOF
+}
+
+# ======================================================================================================= #
+# |                                   **** PARSE ARGUMENTS ****                                         | #
+# ======================================================================================================= #
+
+# ------------------------------------------------------------------------------------- #
+# |         *** Read default arguments: these arguments are not mandatory ***         | #
+# ------------------------------------------------------------------------------------- #
+
+
+
+
+# LASSO arguments
+flag_local_shrinkage="ON"
+flag_global_shrinkage="OFF"
+flag_microarray="MICROARRAY"
+lasso_nbr_fold=10
+
+# COMBINATION arguments
+l_in_name_net=""
+l_in_path_net=""
+flag_training="OFF"
+# default coef
+l_in_coef="NONE"
+l_p_in_model="NONE"
+# small subset
+in_nbr_reg="NONE"
+# regression
+flag_intercept="ON"
+flag_penalize="OFF"
+penalize_nbr_fold=10
+
+
+# LOGISTICS
+p_src_code="$(cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)/"
+p_progress="NONE"
+flag_debug="OFF"
+nbr_job=2
+seed=747
+
+# SLURM arguments
+mail_type=FAIL
+mail_user="NONE"
+flag_slurm="OFF"
+
+# SINGULARITY arguments
+flag_singularity="ON"
+p_singularity_img="NONE"
+p_singularity_bindpath="NONE"
+
+# COMPONENTS OF NP3 arguments
+flag_run_all="ON"
+flag_run_lasso="OFF"
+flag_run_bart="OFF"
+flag_run_combine="OFF"
+flag_run_eval="OFF"
+flag_run_pwm="OFF"
+
+
+# ------------------------------------------------------------------------------------- #
+# |                   *** Read arguments provided by the user ***                     | #
+# ------------------------------------------------------------------------------------- #
+while getopts ":hlbcmea-:" OPTION
+do
+    case "${OPTION}" in
+        l)
+            flag_run_lasso="ON"
+            flag_run_all="OFF"
+            ;;
+        b)
+            flag_run_bart="ON"
+            flag_run_all="OFF"
+            ;;
+        c)
+            flag_run_combine="ON"
+            flag_run_all="OFF"
+            ;;
+        m)
+            flag_run_pwm="ON"
+            flag_run_all="OFF"
+             ;;
+        e)
+            flag_run_eval="ON"
+            flag_run_all="OFF"
+            ;;
+        h)
+            usage
+            exit 2
+            ;;
+        -)
+            case "${OPTARG}" in
+                # Input
+                p_in_binding_event)
+                  p_in_binding_event="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                p_in_expr_target)
+                  p_in_expr_target="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                p_in_expr_reg)
+                  p_in_expr_reg="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                p_in_net_de)
+                  p_in_net_de="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  l_in_name_net="de"
+                  l_in_path_net="${p_in_net_de}"
+                  ;;
+                seed)
+                  seed="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+        
+                # Output
+                p_out_dir)
+                  p_out_dir="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                  
+                # LASSO
+                flag_local_shrinkage)
+                  flag_local_shrinkage="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                flag_global_shrinkage)
+                  flag_global_shrinkage="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                flag_microarray)
+                  flag_microarray="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                lasso_nbr_fold)
+                    lasso_nbr_fold="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                
+                # PWM
+                p_in_promoter)
+                  p_in_promoter="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                p_in_net_bart)
+                  p_in_net_bart="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+               
+               # COMBINE
+                l_in_name_net)
+                  l_in_name_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                l_in_path_net)
+                  l_in_path_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                flag_penalize)
+                  flag_penalize="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                penalize_nbr_fold)
+                  penalize_nbr_fold="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                flag_training)
+                  flag_training="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                in_model_name)
+                  in_model_name="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                flag_intercept)
+                  flag_intercept="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                # method: default param
+                l_in_coef)
+                  narg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                  l_in_coef=("${narg}")
+                  for (( i=1;i<`expr ${narg}+1`;i++ ))
+                  do
+                    arg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                    l_in_coef+=("${arg}")
+                  done
+                  ;;
+                l_p_in_model)
+                  nargs="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  l_p_in_model=("${nargs}")
+                  for (( i=1;i<`expr ${nargs}+1`;i++ ))
+                  do
+                     arg="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                     l_p_in_model+=("${arg}")
+                  done
+                  ;;
+                # method: small subset
+                in_nbr_reg)
+                  in_nbr_reg="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+
+                # Logistics
+                p_src_code)
+                  p_src_code="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                data)
+                  data="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                flag_debug)
+                  flag_debug="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                nbr_job)
+                  nbr_job="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                
+                # SLURM
+                flag_slurm)
+                  flag_slurm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                p_out_dir_logs)
+                  p_out_dir_logs="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                mail_type)
+                  mail_type="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                mail_user)
+                  mail_user="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                  
+                # SINGULARITY arguments
+                flag_singularity)
+                    flag_singularity="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                p_singularity_img)
+                    p_singularity_img="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                p_singularity_bindpath)
+                    p_singularity_bindpath="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+      esac;;
+    
+
+    esac
+done
+
+# ======================================================================================================= #
+# |                                    **** END PARSE ARGUMENTS ****                                    | #
+# ======================================================================================================= #
+echo "p_in_binding_event ${p_in_binding_event} "
+echo "p_in_expr_target ${p_in_expr_target} "
+echo "p_in_expr_reg ${p_in_expr_reg} "
+echo "p_in_net_de ${p_in_net_de} "
+echo "seed ${seed} "
+echo "p_out_dir ${p_out_dir} "
+echo "p_out_dir_logs ${p_out_dir_logs} "
+echo "flag_global_shrinkage ${flag_global_shrinkage} "
+echo "flag_local_shrinkage ${flag_local_shrinkage} "
+echo "flag_microarray ${flag_microarray} "
+echo "lasso_nbr_fold ${lasso_nbr_fold} "
+echo "p_in_promoter ${p_in_promoter} "
+echo "flag_debug ${flag_debug} "
+echo "p_src_code ${p_src_code} "
+echo "flag_slurm ${flag_slurm} "
+echo "flag_singularity ${flag_singularity} "
+echo "p_singularity_img ${p_singularity_img} "
+echo "p_singularity_bindpath ${p_singularity_bindpath}"
+
+# ======================================================================================================= #
+# |                                     *** BUILD LASSO NETWORK ***                                     | #
+# ======================================================================================================= #
+
+
+job_id_lasso=1
+if [ ${flag_run_lasso} == "ON" ] || [ ${flag_run_all} == "ON" ]
+then
+    cmd_run_lasso=""
+    if [ ${flag_slurm} == "ON" ]; then
+        mkdir -p ${p_out_dir_logs}
+        cmd_run_lasso+="sbatch \
+                       -o ${p_out_dir_logs}build_lasso_%J.out \
+                       -e ${p_out_dir_logs}build_lasso_%J.err \
+                       -J ${data}_lasso \
+                       --mail-type=${mail_type} \
+                       --mail-user=${mail_user} \
+                       -D ${p_src_code}src/build_lasso/code/netprophet1/ \
+                       -n 11 \
+                       --mem-per-cpu=10GB \
+                       --cpus-per-task=2 "
+    fi
+    cmd_run_lasso+="${p_src_code}src/build_lasso/wrapper/build_net_lasso.sh \
+                    ${p_in_expr_target} \
+                    ${p_in_expr_reg} \
+                    ${flag_global_shrinkage} \
+                    ${flag_local_shrinkage} \
+                    ${p_out_dir} \
+                    net_lasso.tsv \
+                    ${flag_debug} \
+                    ${flag_slurm} \
+                    ${seed} \
+                    ${lasso_nbr_fold} \
+                    ${flag_microarray} \
+                    ${p_src_code} \
+                    ${flag_singularity} \
+                    ${p_singularity_img} \
+                    ${p_singularity_bindpath}"
+    echo "${cmd_run_lasso}"
+    job_id_lasso=$(echo $(eval ${cmd_run_lasso}) | awk '{split($0, a, " "); print a[4]}')
+    echo "job_id_lasso: ${job_id_lasso}"
+    l_in_name_net+="lasso"
+    l_in_path_net+="${p_out_dir}net_lasso.tsv"
+fi
+
+
+# ======================================================================================================= #
+# |                                      *** BUILD BART NETWORK ***                                     | #
+# ======================================================================================================= #
+job_id_bart=1
+if [ ${flag_run_bart} == "ON" ] || [ ${flag_run_all} == "ON" ]
+then
+    cmd_run_bart=""
+    if [ ${flag_slurm} == "ON" ]; then
+        cmd_run_bart+="sbatch \
+                       -o ${p_out_dir_logs}build_bart_%J.out \
+                       -e ${p_out_dir_logs}build_bart_%J.err \
+                       -J ${data}_bart \
+                       --mail-type=${mail_type} \
+                       --mail-user=${mail_user} \
+                       -n 32 \
+                       --mem=20GB "
+    fi
+    cmd_run_bart+="${p_src_code}src/build_bart/wrapper/build_net_bart.sh \
+                  ${p_in_expr_target} \
+                  ${p_in_expr_reg} \
+                  ${p_out_dir} \
+                  net_bart.tsv \
+                  ${flag_slurm} \
+                  ${p_src_code} \
+                  ${flag_singularity} \
+                  ${p_singularity_img} \
+                  ${p_singularity_bindpath}"
+    
+     
+    job_id_bart=$(echo $(eval ${cmd_run_bart}) | awk '{split($0, a, " "); print a[4]}')
+    l_in_name_net+="${l_in_name_net},bart"
+    l_in_path_net+="${l_in_path_net},${p_out_dir}net_bart.tsv"
+    p_in_net_bart=${p_out_dir}net_bart.tsv
+fi
+
+
+# ======================================================================================================= #
+# |                                     *** BUILD MOTIF NETWORK ***                                     | #
+# ======================================================================================================= #
+
+job_id_pwm=1
+if [ ${flag_run_pwm} == "ON" ] || [ ${flag_run_all} == "ON" ]
+then
+    cmd_build_pwm=""
+    if [ ${flag_slurm} == "ON" ]; then
+        nbr_job=40
+        cmd_net_pwm+="sbatch \
+                      -o ${p_out_dir_logs}build_pwm.out \
+                      -e ${p_out_dir_logs}build_pwm.err \
+                      -J ${data}_pwm \
+                      --mail-type=${mail_type} \
+                      --mail-user=${mail_user} \
+                      --nodes=1 \
+                      --ntasks=10 \
+                      --cpus-per-task=2 \
+                      -D ${p_out_dir_logs}
+                      --dependency=afterok:${job_id_bart} "
+    fi
+    cmd_net_pwm+="${p_src_code}src/build_pwm/workflow/build_net_pwm.sh \
+                 --p_in_net ${p_in_net_bart} \
+                 --p_in_promoter ${p_in_promoter} \
+                 --p_out_dir ${p_out_dir} \
+                 --f_out_name net_pwm.tsv \
+                 --flag_slurm ${flag_slurm} \
+                 --flag_singularirty ${flag_singularity} \
+                 --p_singularity_img ${p_singularity_img} \
+                 --p_singularity_bindpath ${p_singularity_bindpath} \
+                 --p_src_code ${p_src_code} \
+                 --nbr_job ${nbr_job}"
+                 
+    job_id_pwm=$(echo $(eval ${cmd_net_pwm}) | awk '{split($0, a, " "); print a[4]}')
+    echo "${job_id_pwm}"
+    l_in_name_net+="${l_in_name_net},pwm"
+    l_in_path_net+="${l_in_path_net},${p_out_dir}net_pwm.tsv"
+fi
+
+
+# ======================================================================================================= #
+# |                                       *** COMBINE NETWORKS ***                                      | #
+# ======================================================================================================= #
+job_id_combine=1
+if [ ${flag_run_combine} == "ON" ] || [ ${flag_run_all} == "ON" ]
+then
+    cmd_run_combine=""
+    if [ ${flag_slurm} == "ON" ]; then
+        cmd_run_combine+="sbatch \
+                          -o ${p_out_dir_logs}combine_networks_%J.out \
+                          -e ${p_out_dir_logs}combine_networks_%J.err \
+                          -J ${data}_combine \
+                          --mail-type=${mail_type} \
+                          --mail-user=${mail_user} \
+                          --mem=40G \
+                          -N 11 \
+                          --ntasks-per-node=10 \
+                          --cpus-per-task=4 \
+                          --dependency=afterok:${job_id_pwm}:${job_id_bart}:${job_id_lasso} "
+    fi
+    cmd_run_combine+="${p_src_code}src/combine_networks/workflow/combine_networks.sh \
+                      --p_in_binding_event ${p_in_binding_event} \
+                      --l_in_name_net ${l_in_name_net} \
+                      --l_in_path_net ${l_in_path_net} \
+                      --in_model_name ${in_model_name} \
+                      --in_nbr_reg ${in_nbr_reg} \
+                      --l_in_coef ${l_in_coef[@]} \
+                      --l_p_in_model ${l_p_in_model[@]} \
+                      --nbr_job ${nbr_job} \
+                      --seed ${seed} \
+                      --flag_intercept ${flag_intercept} \
+                      --flag_penalize ${flag_penalize} \
+                      --penalize_nbr_fold ${penalize_nbr_fold} \
+                      --flag_training ${flag_training} \
+                      --p_out_dir ${p_out_dir} \
+                      --p_src_code ${p_src_code} \
+                      --flag_debug ${flag_debug} \
+                      --flag_slurm ${flag_slurm} \
+                      --flag_singularity ${flag_singularity} \
+                      --p_singularity_img ${p_singularity_img} \
+                      --p_singularity_bindpath ${p_singularity_bindpath}"
+#     eval ${cmd_run_combine}
+    job_id_combine=$(echo $(eval ${cmd_run_combine}) | awk '{split($0, a, " "); print a[4]}')
+fi

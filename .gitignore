@@ -1,5 +1,6 @@
-code/old/
-wrapper/debug/
+singularity/
+!singularity/recipe.txt
+old/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
