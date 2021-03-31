@@ -346,6 +346,7 @@ create_lasso_global_shrinkage_parallel = function(df_expr_target
   library("Rmpi")
   #}
   print("after load")
+  mpi.spawn.Rslaves(nslaves = 10)
   mpi.bcast.Robj2slave(df_expr_target)
   mpi.bcast.Robj2slave(df_expr_reg)
   mpi.bcast.Robj2slave(df_prior)

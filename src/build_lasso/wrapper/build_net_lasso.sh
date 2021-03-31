@@ -31,14 +31,14 @@ cmd=""
 if [ ${flag_singularity} == "ON" ]; then
     if [ ${flag_slurm} == "ON" ]; then 
         source ${p_src_code}src/helper/load_singularity.sh
-        cmd+="mpirun -np ${SLURM_NTASKS} "
+#         cmd+="mpirun -np ${SLURM_NTASKS} "
     fi
     export SINGULARITY_BINDPATH=${p_singularity_bindpath}
     cmd+="singularity exec ${p_singularity_img} "
 elif [ ${flag_singularity} == "OFF" ]; then
     if [ ${flag_slurm} == "ON" ]; then 
     source ${p_src_code}src/helper/load_modules.sh
-    cmd+="mpirun -np ${SLURM_NTASKS} "
+#     cmd+="mpirun -np ${SLURM_NTASKS} "
     fi
 fi
 

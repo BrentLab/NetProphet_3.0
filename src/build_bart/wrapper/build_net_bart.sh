@@ -22,7 +22,7 @@ cmd=""
 if [ ${flag_singularity} == "ON" ]; then
     if [ ${flag_slurm} == "ON" ]; then source ${p_src_code}src/helper/load_singularity.sh; fi
     export SINGULARITY_BINDPATH=${p_singularity_bindpath}
-    cmd+="mpirun -np ${SLURM_NTASKS} singularity exec ${p_singularity_img} "
+    cmd+="singularity exec ${p_singularity_img} "
 elif [ ${flag_singularity} == "OFF" ]; then
     if [ ${flag_slurm} == "ON" ]; then source ${p_src_code}src/helper/load_modules.sh; fi
 fi
@@ -35,5 +35,4 @@ cmd+="Rscript --no-save --vanilla ${p_src_code}src/build_bart/code/build_net_bar
      --flag_slurm ${flag_slurm} \
      --p_src_code ${p_src_code}"
 
-echo "${cmd}"
 eval ${cmd}     

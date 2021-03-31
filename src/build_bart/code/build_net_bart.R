@@ -47,7 +47,7 @@ generate_bart_net = function(p_in_expr_target
                                      , tfLevel=t(as.matrix(df_expr_reg))
                                      , regMat=df_allowed
                                      , mpiComm=1
-                                     , blockSize=32
+                                     , blockSize=20
                                     )
     }
     

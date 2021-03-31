@@ -293,24 +293,7 @@ done
 # ======================================================================================================= #
 # |                                    **** END PARSE ARGUMENTS ****                                    | #
 # ======================================================================================================= #
-echo "p_in_binding_event ${p_in_binding_event} "
-echo "p_in_expr_target ${p_in_expr_target} "
-echo "p_in_expr_reg ${p_in_expr_reg} "
-echo "p_in_net_de ${p_in_net_de} "
-echo "seed ${seed} "
-echo "p_out_dir ${p_out_dir} "
-echo "p_out_dir_logs ${p_out_dir_logs} "
-echo "flag_global_shrinkage ${flag_global_shrinkage} "
-echo "flag_local_shrinkage ${flag_local_shrinkage} "
-echo "flag_microarray ${flag_microarray} "
-echo "lasso_nbr_fold ${lasso_nbr_fold} "
-echo "p_in_promoter ${p_in_promoter} "
-echo "flag_debug ${flag_debug} "
-echo "p_src_code ${p_src_code} "
-echo "flag_slurm ${flag_slurm} "
-echo "flag_singularity ${flag_singularity} "
-echo "p_singularity_img ${p_singularity_img} "
-echo "p_singularity_bindpath ${p_singularity_bindpath}"
+
 
 # ======================================================================================================= #
 # |                                     *** BUILD LASSO NETWORK ***                                     | #
@@ -331,6 +314,7 @@ then
                        --mail-user=${mail_user} \
                        -D ${p_src_code}src/build_lasso/code/netprophet1/ \
                        -n 11 \
+                       -N 1 \
                        --mem-per-cpu=10GB \
                        --cpus-per-task=2 "
     fi
@@ -372,7 +356,8 @@ then
                        -J ${data}_bart \
                        --mail-type=${mail_type} \
                        --mail-user=${mail_user} \
-                       -n 32 \
+                       -n 20 \
+                       -N 1 \
                        --mem=20GB "
     fi
     cmd_run_bart+="${p_src_code}src/build_bart/wrapper/build_net_bart.sh \

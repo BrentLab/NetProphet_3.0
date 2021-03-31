@@ -1,6 +1,7 @@
-singularity/
 !singularity/recipe.txt
+singularity/*
 old/
+src/build_xgboost.R
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
