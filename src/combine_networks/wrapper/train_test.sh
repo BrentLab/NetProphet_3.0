@@ -64,6 +64,9 @@ do
             flag_slurm)
                 flag_slurm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
+            slurm_nbr_tasks)
+                slurm_nbr_tasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
                 
             # logistics
             p_src_code)
@@ -98,25 +101,6 @@ do
     esac
 done         
 
-echo "p_in_binding_train ${p_in_binding_train}"
-echo "l_in_path_net_train ${l_in_path_net_train}"
-echo "l_in_path_net_test ${l_in_path_net_test}"
-echo "l_in_name_net ${l_in_name_net}"
-echo "in_model_name ${in_model_name}"
-echo "p_out_pred_train ${p_out_pred_train}"
-echo "p_out_pred_test ${p_out_pred_test}"
-echo "p_out_model_summary ${p_out_model_summary}"
-echo "p_out_model ${p_out_model}"
-echo "p_out_optimal_lambda ${p_out_optimal_lambda}"
-echo "p_src_code ${p_src_code}"
-echo "flag_slurm ${flag_slurm}"
-echo "flag_intercept ${flag_intercept}"
-echo "flag_penalize ${flag_penalize}"
-echo "p_dir_penalize ${p_dir_penalize}"
-echo "penalize_nbr_fold ${penalize_nbr_fold}"
-echo "flag_singularity ${flag_singularity}"
-echo "p_singularity_img ${p_singularity_img}"
-echo "p_singularity_bindpath ${p_singularity_bindpath}"
 
 # ======================================================== #
 # |                 *** Define Command ***               | #
@@ -128,7 +112,9 @@ if [ ${flag_singularity} == "ON" ]; then
     export SINGULARITY_BINDPATH=${p_singularity_bindpath}
     cmd+="singularity exec ${p_singularity_img} "
 elif [ ${flag_singularity} == "OFF" ]; then
-    if [ ${flag_slurm} == "ON" ]; then source ${p_src_code}src/helper/load_modules.sh; fi
+    if [ ${flag_slurm} == "ON" ]; then 
+        source ${p_src_code}src/helper/load_modules.sh
+    fi
 fi
 
 # continue defining command
@@ -145,6 +131,7 @@ cmd+="Rscript ${p_src_code}src/combine_networks/code/train_test.R \
              --p_out_optimal_lambda ${p_out_optimal_lambda} \
              --p_src_code ${p_src_code} \
              --nbr_job ${nbr_job} \
+             --nbr_cores ${slurm_nbr_tasks} \
              --flag_intercept ${flag_intercept} \
              --flag_penalize ${flag_penalize} \
              --p_dir_penalize ${p_dir_penalize} \

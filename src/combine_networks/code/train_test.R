@@ -1,25 +1,6 @@
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # | Train model and Predict testing data.                      | #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-# # to remove
-# p_wd="/scratch/mblab/dabid/netprophet/net_out/kem_np3_full_L1_nbr_reg_40_seed_0_tf281_target6112/tmp/combine_net_ldbp/with_de/"
-# p_binding_train=paste(p_wd, 'data_1_fold/train_binding.tsv', sep='')
-# l_name_net=c('lasso', 'de', 'bart')
-# l_path_net_train=c(paste(p_wd, 'data_1_fold/train_lasso.tsv', sep='')
-#                   , paste(p_wd, 'data_1_fold/train_de.tsv', sep='')
-#                   , paste(p_wd, 'data_1_fold/train_bart.tsv', sep=''))
-# l_path_net_test=c(paste(p_wd, 'tmp_penalize/data_cv/fold0_test_lasso.tsv', sep='')
-#                    , paste(p_wd, 'tmp_penalize/data_cv/fold0_test_de.tsv', sep='')
-#                    , paste(p_wd, 'tmp_penalize/data_cv/fold0_test_bart.tsv', sep=''))
-# model_name="dummy_transform"
-# flag_penalize="ON"
-# penalize_nbr_fold=10
-# p_dir_penalize=paste(p_wd,'tmp_penalize/' , sep='')
-# p_out_model=paste(p_wd, 'model_test.RData', sep='')
-# p_out_optimal_lambda = paste(p_wd, 'optimal_lambda.tsv', sep='')
-# p_out_pred_train=paste(p_wd, 'predict_train.tsv', sep='')
-# p_out_pred_test=paste(p_wd, 'predict_test.tsv', sep='')
-# # end
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # |          *** TRAIN & TEST WITH PENALIZATION ***            | #
@@ -66,7 +47,7 @@ train_test_with_penalization = function( #input
     #' No object is returned, however all these files are saved
     #'  
     
-   
+    print(nbr_job)
 
     # ========================================================== #
     # |              *** DEFINE FUNCTIONS ***                  | #
@@ -118,6 +99,7 @@ train_test_with_penalization = function( #input
             saveRDS(model, file=p_out_model)
         }                                 
         
+        gc()
         list(df_training, model)
     }
     
@@ -215,13 +197,14 @@ train_test_with_penalization = function( #input
     library("doParallel")
     
     # Allocate cores for parallel runs, allocate as many as folds+1
-    cl = makeCluster(min(nbr_job, detectCores(logical=FALSE)[1]-1))
+    cl = makeCluster(nbr_job, outfile=paste(p_src_code, 'singularity/s_np3/home/log.out', sep=''))
     registerDoParallel(cl)
     
     
     
     ## 1. Train models, train on all training data, train on fold CVs
     # prepare data
+    print('train models')
     l_p_binding_train = c(p_binding_train, unlist(lapply(seq(0, penalize_nbr_fold-1, 1)
                             , function(x) paste(p_dir_penalize, "data_cv/fold", x, "_train_binding.tsv", sep=""))))
     l_l_path_net_train = list()
@@ -232,6 +215,7 @@ train_test_with_penalization = function( #input
     }
     l_p_out_model = c(p_out_model, unlist(lapply(seq(0, penalize_nbr_fold-1, 1)
                                  , function(x) paste(p_dir_penalize, "predictions/fold", x, "_model.RData", sep=""))))
+    print('before train model')                                                 
     # train models in parallel (lunch parallel jobs)
     l_df_training_model = foreach(p_binding_train_each=l_p_binding_train
                       , l_path_net_train_each=l_l_path_net_train
@@ -245,6 +229,7 @@ train_test_with_penalization = function( #input
                                         , p_out_model=p_out_model_each
                                         , p_src_code=p_src_code)
     } 
+    print('after train models')                                                 
     ## 2. After training models, calculate sum(log(likelihood))
     # prepare data
     model_for_all_training = l_df_training_model[[1]][[2]]  # get the model trained on all training data
@@ -340,11 +325,7 @@ train_test = function(p_in_binding_train
                       , l_in_path_net_train
                       , l_in_path_net_test
                       , in_model_name
-                      , flag_intercept
-                      , p_out_pred_train
-                      , p_out_pred_test
-                      , p_out_model_summary
-                      , p_out_model){
+                      , p_out_pred_test){
     warnings()
     
     # Read Binding data
@@ -403,8 +384,288 @@ train_test = function(p_in_binding_train
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # |           *** END TRAIN & TEST PLAIN SIMPLE ***            | #
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
-                                         
-                                         
+
+                
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# |            *** TRAIN & TEST WITHOUT PENALIZATION WITH BART ***             | #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+train_test_with_bart = function(p_in_binding_train
+                      , l_in_name_net
+                      , l_in_path_net_train
+                      , l_in_path_net_test
+                      , in_model_name
+                      , flag_intercept
+                      , p_out_pred_train
+                      , p_out_pred_test
+                      , p_out_model_summary
+                      , p_out_model
+                      , nbr_cores){
+    library('BART')
+    warnings()
+    
+    # Read Binding data
+    train_binding = read.csv(p_in_binding_train, header=FALSE, sep='\t')[3]
+    
+    # Read first network to get the list of regulators/targets for the training/testing
+    p_net_train = l_in_path_net_train[1]
+    df_net_train = read.csv(p_net_train, header=FALSE, sep='\t')
+    l_reg_train = df_net_train[1]
+    l_target_train = df_net_train[2]
+    
+    p_net_test = l_in_path_net_test[1]
+    df_net_test = read.csv(p_net_test, header=FALSE, sep='\t')
+    l_reg_test = df_net_test[1]
+    l_target_test = df_net_test[2]
+    
+    # Training: Read source of information from files into DataFrame
+    df_training = read_data(l_name_net=l_in_name_net
+                            , l_path_net=l_in_path_net_train
+                            , model_name=in_model_name)
+    
+    # Testing: Read source of information from files into DataFrame
+    df_testing = read_data(l_name_net=l_in_name_net
+                           , l_path_net=l_in_path_net_test
+                           , model_name=in_model_name
+                          )
+    if (dim(df_training)[2] != dim(df_testing)[2]){
+        # pad with 0s for missing columns
+        l_missing_col = setdiff(colnames(df_training), colnames(df_testing))
+        df_testing[l_missing_col] = 0
+        df_testing = df_testing[colnames(df_training)]
+    }
+    # print('before training')
+    # Train model
+    print(mc.cores.openmp())
+    model = mc.lbart(x.train=as.matrix(df_training)
+                  , y.train=as.matrix(train_binding)
+                  , x.test=as.matrix(df_testing)
+                  , usequants=TRUE
+                  , ntree=50
+                  , numcut=10
+                  , ndpost=300
+                  , seed = 0
+                  , mc.cores=nbr_cores
+                  )
+    
+    # Write Predictions and Model Summary
+    # saveRDS(model, file=p_out_model)
+    # capture.output(summary(model), file=p_out_model_summary, append=FALSE)
+    # write.table(
+    #     file=file(p_out_pred_train)
+    #     , x=data.frame(REGULATOR=l_reg_train, TARGET=l_target_train, VALUE=predict_train)
+    #     , row.names=FALSE, col.names=FALSE, sep='\t', quote=FALSE)
+    # print('after training')
+    # 
+    # print(model$prob.test.mean)
+    # print('before writing')
+    write.table(
+        file=p_out_pred_test
+        , x=data.frame(REGULATOR=l_reg_test, TARGET=l_target_test, VALUE=model$prob.test.mean)
+        , row.names=FALSE, col.names=FALSE,  sep='\t', quote=FALSE)
+}
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# |          *** END TRAIN & TEST WITHOUT PENALIZATION WITH BART ***           | #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+    
+train_test_with_xgboost = function(p_in_binding_train
+                                   , l_in_name_net
+                                   , l_in_path_net_train
+                                   , l_in_path_net_test
+                                   , in_model_name
+                                   , flag_intercept
+                                   , p_out_pred_train
+                                   , p_out_pred_test
+                                   , p_out_model_summary
+                                   , p_out_model){
+    library("xgboost")
+    # Read Binding data
+    train_binding = read.csv(p_in_binding_train, header=FALSE, sep='\t')[3]
+    
+    # Read first network to get the list of regulators/targets for the training/testing
+    p_net_train = l_in_path_net_train[1]
+    df_net_train = read.csv(p_net_train, header=FALSE, sep='\t')
+    l_reg_train = df_net_train[1]
+    l_target_train = df_net_train[2]
+    
+    p_net_test = l_in_path_net_test[1]
+    df_net_test = read.csv(p_net_test, header=FALSE, sep='\t')
+    l_reg_test = df_net_test[1]
+    l_target_test = df_net_test[2]
+    
+    # Training: Read source of information from files into DataFrame
+    df_training = read_data(l_name_net=l_in_name_net
+                            , l_path_net=l_in_path_net_train
+                            , model_name=in_model_name)
+    
+    # Train model
+    model = xgboost(data=as.matrix(df_training)
+                    , label=as.matrix(train_binding)
+                    , nrounds = 70
+                    , eta = 0.1
+                    , objective = "binary:logistic"
+                    , eval_metric= "logloss"
+                    , max_depth=3
+                    , min_child_weight=4.26
+                    , subsample=0.676
+                    , colsample_bytree=0.662
+                    , lambda=0.3)
+    
+    # Testing: Read source of information from files into DataFrame
+    df_testing = read_data(l_name_net=l_in_name_net
+                           , l_path_net=l_in_path_net_test
+                           , model_name=in_model_name
+    )
+    if (dim(df_training)[2] != dim(df_testing)[2]){
+        # pad with 0s for missing columns
+        l_missing_col = setdiff(colnames(df_training), colnames(df_testing))
+        df_testing[l_missing_col] = 0
+        df_testing = df_testing[colnames(df_training)]
+    }
+    
+    # Predictions: Predict Training  & Testing data
+    predict_train = predict(model, as.matrix(df_training))
+    predict_test = predict(model, as.matrix(df_testing))
+    # Write Predictions and Model Summary
+    saveRDS(model, file=p_out_model)
+    capture.output(summary(model), file=p_out_model_summary, append=FALSE)
+    write.table(
+        file=file(p_out_pred_train)
+        , x=data.frame(REGULATOR=l_reg_train, TARGET=l_target_train, VALUE=predict_train)
+        , row.names=FALSE, col.names=FALSE, sep='\t', quote=FALSE)
+    
+    write.table(
+        file=p_out_pred_test
+        , x=data.frame(REGULATOR=l_reg_test, TARGET=l_target_test, VALUE=predict_test)
+        , row.names=FALSE, col.names=FALSE,  sep='\t', quote=FALSE)
+    
+}
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# |                *** TRAIN & TEST WITH XGBOOST - OPTIMIZE ***                | #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+train_test_with_xgboost_optimize = function(p_in_binding_train
+                                   , l_in_name_net
+                                   , l_in_path_net_train
+                                   , l_in_path_net_test
+                                   , in_model_name
+                                   , p_out_pred_train
+                                   , p_out_pred_test
+                                   , p_out_model_summary
+                                   , p_out_model){
+    # load libraries
+    library("xgboost")
+    library("mlr")
+    library("parallel")
+    library("parallelMap")
+    
+    # Read Binding data
+    train_binding = read.csv(p_in_binding_train, header=FALSE, sep='\t')[3]
+    
+    # Read first network to get the list of regulators/targets for the training/testing
+    p_net_train = l_in_path_net_train[1]
+    df_net_train = read.csv(p_net_train, header=FALSE, sep='\t')
+    l_reg_train = df_net_train[1]
+    l_target_train = df_net_train[2]
+    
+    p_net_test = l_in_path_net_test[1]
+    df_net_test = read.csv(p_net_test, header=FALSE, sep='\t')
+    l_reg_test = df_net_test[1]
+    l_target_test = df_net_test[2]
+    
+    # Training: Read source of information from files into DataFrame
+    df_training = read_data(l_name_net=l_in_name_net
+                            , l_path_net=l_in_path_net_train
+                            , model_name=in_model_name)
+    
+    # Testing: Read source of information from files into DataFrame
+    df_testing = read_data(l_name_net=l_in_name_net
+                           , l_path_net=l_in_path_net_test
+                           , model_name=in_model_name)
+    
+    if (dim(df_training)[2] != dim(df_testing)[2]){
+        # pad with 0s for missing columns
+        l_missing_col = setdiff(colnames(df_training), colnames(df_testing))
+        df_testing[l_missing_col] = 0
+        df_testing = df_testing[colnames(df_training)]
+    }
+    
+    
+    
+    # convert characters to factors
+    fact_col = colnames(df_training)[sapply(df_training, is.character)]
+    for(i in fact_col) set(df_training, j=i, value=factor(df_training[[i]]))
+    for(i in fact_col) set(df_testing, j=i, value=factor(df_testing[[i]]))
+    
+    # create tasks for training & testing
+    train_task = makeClassifTask(data=data.frame(df_training, target=unlist(train_binding)), target="target")
+    test_task = makeClassifTask(data=data.frame(df_testing, target=factor(rep(1, dim(df_testing)[1]))), target="target")
+    # create learner
+    learner = makeLearner("classif.xgboost", predict.type="prob")
+    learner$par.vals = list(objective="binary:logistic"
+                            , eval_metric="logloss"
+                            , nrounds=100L, eta=0.1)
+    
+    # set parameter space
+    params = makeParamSet(makeDiscreteParam("booster", values=c("gbtree"))
+                          , makeIntegerParam("max_depth", lower=1L, upper=20L)
+                          , makeNumericParam("min_child_weight", lower=1L, upper=10L)
+                          , makeNumericParam("subsample", lower=0.5, upper=1)
+                          , makeNumericParam("colsample_bytree", lower=0.5, upper=1)
+                          , makeNumericParam("gamma", lower=0, upper=10)
+                          , makeNumericParam("lambda", lower=0, upper=1)
+                          , makeNumericParam("alpha", lower=0, upper=1)
+                          )
+    
+    # set resampling strategy
+    rdesc = makeResampleDesc("CV", stratify=TRUE, iters=5L)
+    
+    # search strategy
+    ctrl = makeTuneControlRandom(maxit = 20L)
+    
+    # set parallel backend
+    parallelStartSocket(cpus=detectCores())
+    
+    # parameter tuning
+    mytune = tuneParams(learner=learner
+                        , task=train_task
+                        , resampling=rdesc
+                        , measures=acc
+                        , par.set=params
+                        , control=ctrl
+                        , show.info=TRUE
+                        )
+    # tuned param
+    tuned_param = setHyperPars(learner, par.vals = mytune$x)
+    
+    # Train model with tuned parameters
+    model = train(learner=tuned_param, task=train_task)
+    
+    predict_test = predict(model, test_task)
+    predict_train = predict(model, train_task)
+    
+    # Write Predictions and Model Summary
+    # write the model
+    saveRDS(model, file=p_out_model)
+    # write model summary
+    capture.output(summary(model), file=p_out_model_summary, append=FALSE)
+    # write training predictions
+    write.table(
+        file=file(p_out_pred_train)
+        , x=data.frame(REGULATOR=l_reg_train, TARGET=l_target_train, VALUE=predict_train$data$prob.1)
+        , row.names=FALSE, col.names=FALSE, sep='\t', quote=FALSE)
+    # write testing predictions
+    write.table(
+        file=p_out_pred_test
+        , x=data.frame(REGULATOR=l_reg_test, TARGET=l_target_test, VALUE=predict_test$data$prob.1)
+        , row.names=FALSE, col.names=FALSE,  sep='\t', quote=FALSE)
+    
+}
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+# |              *** END TRAIN & TEST WITH XGBOOST - OPTIMIZE ***              | #
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
+
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # |                     *** MAIN FUNCTION ***                  | #
 # |           This function will start the workflow            | #
@@ -438,6 +699,7 @@ if (sys.nframe() == 0){
         # logistics
         , p_src_code = make_option(c("--p_src_code"), type="character", help="path of source of code for netprophet")
         , nbr_job = make_option(c("--nbr_job"), type="integer", help="number of tasks/jobs running in parallel")
+        , nbr_cores = make_option(c("--nbr_cores"), type="integer", help="nbr of cores for mc.lbart")
         
         # prediction parameters/options
         , flag_intercept = make_option(c("--flag_intercept"), type="character", help="ON or OFF for intercept generation")
@@ -459,7 +721,7 @@ if (sys.nframe() == 0){
     # ====================================================== #
     # |                *** Train & Test ***                | #
     # ====================================================== #
-    if (opt$flag_penalize == "OFF"){
+    if ((opt$flag_penalize == "OFF") || (opt$flag_penalize == "OFF-LOGISTIC")){
         train_test(p_in_binding_train=opt$p_in_binding_train
                    , l_in_name_net=strsplit(opt$l_in_name_net, ",")[[1]]
                    , l_in_path_net_train=strsplit(opt$l_in_path_net_train, ",")[[1]]
@@ -470,7 +732,7 @@ if (sys.nframe() == 0){
                    , p_out_model_summary=opt$p_out_model_summary
                    , flag_intercept=opt$flag_intercept
                    , p_out_model=opt$p_out_model)
-    } else if (opt$flag_penalize == "ON"){
+    } else if (opt$flag_penalize == "ON") {
         train_test_with_penalization(# all training data parameters
                                      p_binding_train=opt$p_in_binding_train
                                      , l_name_net=strsplit(opt$l_in_name_net, ",")[[1]]
@@ -490,6 +752,40 @@ if (sys.nframe() == 0){
                                      , p_src_code=opt$p_src_code
                                      , nbr_job=opt$nbr_job
                                     )
+    } else if (opt$flag_penalize == "OFF-BART"){
+        train_test_with_bart(p_in_binding_train=opt$p_in_binding_train
+                           , l_in_name_net=strsplit(opt$l_in_name_net, ",")[[1]]
+                           , l_in_path_net_train=strsplit(opt$l_in_path_net_train, ",")[[1]]
+                           , l_in_path_net_test=strsplit(opt$l_in_path_net_test, ",")[[1]]
+                           , in_model_name=opt$in_model_name
+                           , p_out_pred_train=opt$p_out_pred_train
+                           , p_out_pred_test=opt$p_out_pred_test
+                           , p_out_model_summary=opt$p_out_model_summary
+                           , flag_intercept=opt$flag_intercept
+                           , p_out_model=opt$p_out_model
+                           , nbr_cores=opt$nbr_cores
+                           )
+    } else if (opt$flag_penalize == "XGBOOST-DEFAULT"){
+        train_test_with_xgboost(p_in_binding_train=opt$p_in_binding_train
+                                , l_in_name_net=strsplit(opt$l_in_name_net, ",")[[1]]
+                                , l_in_path_net_train=strsplit(opt$l_in_path_net_train, ",")[[1]]
+                                , l_in_path_net_test=strsplit(opt$l_in_path_net_test, ",")[[1]]
+                                , in_model_name=opt$in_model_name
+                                , p_out_pred_train=opt$p_out_pred_train
+                                , p_out_pred_test=opt$p_out_pred_test
+                                , p_out_model_summary=opt$p_out_model_summary
+                                , flag_intercept=opt$flag_intercept
+                                , p_out_model=opt$p_out_model)
+    } else if (opt$flag_penalize == "XGBOOST-OPTIMIZE"){
+        train_test_with_xgboost_optimize(p_in_binding_train=opt$p_in_binding_train
+                                         , l_in_name_net=strsplit(opt$l_in_name_net, ",")[[1]]
+                                         , l_in_path_net_train=strsplit(opt$l_in_path_net_train, ",")[[1]]
+                                         , l_in_path_net_test=strsplit(opt$l_in_path_net_test, ",")[[1]]
+                                         , in_model_name=opt$in_model_name
+                                         , p_out_pred_train=opt$p_out_pred_train
+                                         , p_out_pred_test=opt$p_out_pred_test
+                                         , p_out_model_summary=opt$p_out_model_summary
+                                         , p_out_model=opt$p_out_model)
     }
     
 }

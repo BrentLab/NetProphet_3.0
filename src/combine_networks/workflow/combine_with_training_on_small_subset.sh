@@ -73,6 +73,9 @@ do
                 flag_slurm)
                     flag_slurm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                     ;;
+                slurm_nbr_tasks)
+                    slurm_nbr_tasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    ;;
                     
                 # Singularity
                 flag_singularity)
@@ -121,7 +124,7 @@ cmd_select_training="${p_src_code}src/combine_networks/wrapper/select_training_t
 if [ ${flag_debug} == "ON" ]; then printf "${cmd_select_training}\n" >> ${p_progress}; fi
 eval ${cmd_select_training}
 
-if [ ${flag_penalize} == "OFF" ]; then
+if [ ${flag_penalize} != "ON" ]; then
     p_dir_penalize="NONE"
 else
     p_dir_penalize=${p_out_dir}tmp_penalize/
@@ -142,7 +145,7 @@ else
                               --flag_slurm ${flag_slurm} \
                               --flag_singularity ${flag_singularity} \
                               --p_singularity_img ${p_singularity_img} \
-                              --p_singularityP_bindpath ${p_singularity_bindpath}"
+                              --p_singularity_bindpath ${p_singularity_bindpath}"
      if [ ${flag_debug} == "ON" ]; then printf "${cmd_select_training_penalize}\n" >> ${p_progress}; fi
      eval ${cmd_select_training_penalize}
 fi
@@ -169,6 +172,7 @@ cmd_train_test="${p_src_code}src/combine_networks/wrapper/train_test.sh \
                 --p_dir_penalize ${p_dir_penalize} \
                 --penalize_nbr_fold ${penalize_nbr_fold} \
                 --flag_slurm ${flag_slurm} \
+                --slurm_nbr_tasks ${slurm_nbr_tasks} \
                 --flag_singularity ${flag_singularity} \
                 --p_singularity_img ${p_singularity_img} \
                 --p_singularity_bindpath ${p_singularity_bindpath}"

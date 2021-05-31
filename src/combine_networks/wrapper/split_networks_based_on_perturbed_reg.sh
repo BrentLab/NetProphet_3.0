@@ -65,7 +65,7 @@ elif [ ${flag_singularity} == "OFF" ]; then
     then
         source ${p_src_code}src/helper/load_modules.sh
         source activate np3
-        ls -l ${SLURM_SUBMIT_DIR}/np3/bin >> /dev/null
+        ls -l ${CONDA_PREFIX}/bin >> /dev/null
     fi
 fi
 

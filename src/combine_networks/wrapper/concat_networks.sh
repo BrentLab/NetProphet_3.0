@@ -15,6 +15,9 @@ do
                 flag_concat)
                     flag_concat="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                     ;;
+                nbr_fold)
+                    nbr_fold="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    ;;
                 p_in_dir_data_cv)
                     p_in_dir_data_cv="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                     ;;
@@ -70,7 +73,7 @@ elif [ ${flag_singularity} == "OFF" ]; then
     if [ ${flag_slurm} == "ON" ]; then
         source ${p_src_code}src/helper/load_modules.sh
         source activate np3
-        ls -l ${SLURM_SUBMIT_DIR}/np3/bin > /dev/null
+        ls -l ${CONDA_PREFIX}/bin >> /dev/null
     fi
 fi
 
@@ -78,13 +81,20 @@ if [ ${flag_concat} == "concat_cv" ]; then
     cmd+="python3 ${p_src_code}src/combine_networks/code/concat_networks.py \
          --p_in_dir_data ${p_in_dir_data_cv} \
          --p_in_dir_pred ${p_in_dir_pred} \
-         --p_out_file ${p_out_net_np3}"
+         --p_out_file ${p_out_net_np3} \
+         --nbr_fold ${nbr_fold} \
+         --flag_method ${flag_concat}"
     
 elif [ ${flag_concat} == "two_networks" ]; then
     cmd+="python3 ${p_src_code}src/combine_networks/code/concat_networks.py \
          --l_p_in_net ${p_in_net_np3_1} ${p_in_net_np3_2} \
          --p_out_file ${p_out_net_np3} \
          --flag_method 'a'"
+elif [ ${flag_concat} == "with_and_without_de" ]; then
+    cmd+="python3 ${p_src_code}src/combine_networks/code/concat_networks.py \
+         --l_p_in_net ${p_in_net_np3_1} ${p_in_net_np3_2} \
+         --p_out_file ${p_out_net_np3} \
+         --flag_method 'with_and_without_de'"
 fi
 
 if [ ${flag_debug} == "ON" ]; then printf "***PYTHON CMD***\n${cmd}\n" >> ${p_progress}; fi

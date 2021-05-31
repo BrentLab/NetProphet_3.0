@@ -15,7 +15,7 @@ function create_paths(){
     prefix=${2}  # prefix of file name
     p_dir=${3}  # path of directory of files
     
-    IFS=',' read -ra l_name <<< "${l_name_net}"  # put ${l_name_net} into an array ${l_name_net}
+    IFS=',' read -ra l_name <<< "${l_name_net}"  # put ${l_name_net} into an array ${l_name}
     l_path_net="${p_dir}${prefix}_${l_name[0]}.tsv"  # create the first path
     
     # loop over the name of networks for creating the remaining paths
@@ -28,6 +28,27 @@ function create_paths(){
     echo "${l_path_net}"
 }
 
+function create_l_name_net_without_de(){
+    # parameters
+    l_name_net=${1}
+    
+    IFS=',' read -ra l_name <<< "${l_name_net}"  # put the string ${l_name_net} into an array ${l_name}
+    
+    # loop over the name of networks to create the names without de
+    for (( i=0;i<${#l_name[@]};i++ ))
+    do
+        if [ ${l_name[i]} != "de" ]; then
+            if [ -z "${l_name_net_without_de}" ]; then
+                l_name_net_without_de="${l_name[i]}"
+            else
+                l_name_net_without_de="${l_name_net_without_de},${l_name[i]}"
+            fi
+        fi
+    done
+    
+    # return list of names without de
+    echo "${l_name_net_without_de}"
+}
 # ======================================================================== #
 # |                     *** END HELPER FUNCTIONS ***                     | #
 # ======================================================================== #
@@ -57,6 +78,9 @@ do
                     ;;                
                 flag_training)
                    flag_training="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+                   ;;
+               nbr_fold)
+                   nbr_fold="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                    ;;
                 seed)
                     seed="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
@@ -113,6 +137,18 @@ do
                 flag_slurm)
                     flag_slurm="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
+                slurm_nbr_nodes)
+                  slurm_nbr_nodes="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                slurm_nbr_tasks)
+                  slurm_nbr_tasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                slurm_nbr_cpus)
+                  slurm_nbr_cpus="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
+                slurm_mem)
+                  slurm_mem="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
                     
                 # Singularity
                 flag_singularity)
@@ -228,8 +264,9 @@ eval ${cmd_split_networks_based_on_de}
 # | and (2) networks without DE info                                     | #
 # ------------------------------------------------------------------------ #
 # set the list of inputs for with_de/without_de runs
+l_l_in_name_net=(${l_in_name_net} $(create_l_name_net_without_de ${l_in_name_net}))
 l_l_in_path_net=($(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/with_de/) \
-              $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/without_de/))
+              $(create_paths ${l_l_in_name_net[1]} net ${p_out_dir}tmp_combine/without_de/))
 l_p_in_net_binding=(${p_out_dir}tmp_combine/with_de/net_binding.tsv ${p_out_dir}tmp_combine/without_de/net_binding.tsv)
 l_dir=(with_de without_de)
 
@@ -243,15 +280,20 @@ do
             cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_cv_folds.sh \
                                    --p_in_binding_event ${p_in_binding_event} \
                                    --p_in_net_binding ${l_p_in_net_binding[i]} \
-                                   --l_in_name_net ${l_in_name_net} \
+                                   --l_in_name_net ${l_l_in_name_net[i]} \
                                    --l_in_path_net ${l_l_in_path_net[i]} \
                                    --in_model_name ${in_model_name} \
                                    --p_out_dir ${p_out_dir}tmp_combine/${l_dir[i]}/ \
                                    --flag_intercept ${flag_intercept} \
                                    --flag_penalize ${flag_penalize} \
+                                   --nbr_fold ${nbr_fold} \
                                    --penalize_nbr_fold ${penalize_nbr_fold} \
                                    --seed ${seed} \
                                    --flag_slurm ${flag_slurm} \
+                                   --slurm_nbr_tasks ${slurm_nbr_tasks} \
+                                   --slurm_nbr_cpus ${slurm_nbr_cpus} \
+                                   --slurm_nbr_nodes ${slurm_nbr_nodes} \
+                                   --slurm_mem ${slurm_mem} \
                                    --flag_singularity ${flag_singularity} \
                                    --p_singularity_img ${p_singularity_img} \
                                    --p_singularity_bindpath ${p_singularity_bindpath} \
@@ -259,12 +301,11 @@ do
                                    --p_progress ${p_progress} \
                                    --flag_debug ${flag_debug} \
                                    --nbr_job ${nbr_job}"
-
         elif [ ${flag_training} == "ON-SUB" ]
         then
             cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_small_subset.sh \
                                   --p_in_net_binding ${l_p_in_net_binding[i]} \
-                                  --l_in_name_net ${l_in_name_net} \
+                                  --l_in_name_net ${l_l_in_name_net[i]} \
                                   --l_in_path_net ${l_l_in_path_net[i]} \
                                   --in_nbr_reg ${in_nbr_reg} \
                                   --in_model_name ${in_model_name} \
@@ -274,6 +315,7 @@ do
                                   --penalize_nbr_fold ${penalize_nbr_fold} \
                                   --seed ${seed} \
                                   --flag_slurm ${flag_slurm} \
+                                  --slurm_nbr_tasks ${slurm_nbr_tasks} \
                                   --flag_singularity ${flag_singularity} \
                                   --p_singularity_img ${p_singularity_img} \
                                   --p_singularity_bindpath ${p_singularity_bindpath} \
@@ -285,7 +327,7 @@ do
         elif [ ${flag_training} == "OFF" ]
         then
             cmd_combine_networks="${p_src_code}src/combine_networks/wrapper/no_training_default_coefficients.sh \
-                                  --l_in_name_net ${l_in_name_net} \
+                                  --l_in_name_net ${l_l_in_name_net[i]} \
                                   --l_in_path_net ${l_l_in_path_net[i]} \
                                   --in_model_name ${in_model_name} \
                                   --p_out_dir ${p_out_dir}tmp_combine/${l_dir[i]}/ \
@@ -311,12 +353,13 @@ done
 # |                    *** Concatenate networks ***                      | #
 # |                Concatenate networks with & without DE                | #
 # ------------------------------------------------------------------------ #
-if [ -d ${p_out_dir}tmp_combine/${l_dir[0]}/ ] & [ -d ${p_out_dir}tmp_combine/${l_dir[1]}/ ]; then
+if [ -d ${p_out_dir}tmp_combine/${l_dir[0]}/ ] && [ -d ${p_out_dir}tmp_combine/${l_dir[1]}/ ]; then
     # define command
     cmd_concat_networks="${p_src_code}src/combine_networks/wrapper/concat_networks.sh \
                          --p_in_net_np3_1 ${p_out_dir}tmp_combine/${l_dir[0]}/net_np3.tsv \
                          --p_in_net_np3_2 ${p_out_dir}tmp_combine/${l_dir[1]}/net_np3.tsv  \
-                         --p_out_net_np3 ${p_out_dir}tmp_combine/net_np3.tsv \
+                         --p_out_net_np3 ${p_out_dir}net_np3.tsv \
+                         --flag_concat 'with_and_without_de' \
                          --flag_slurm ${flag_slurm} \
                          --flag_singularity ${flag_singularity} \
                          --p_singularity_img ${p_singularity_img} \

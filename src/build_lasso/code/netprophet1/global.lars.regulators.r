@@ -341,12 +341,8 @@ create_lasso_global_shrinkage_parallel = function(df_expr_target
                                                  , p_out_dir
                                                  , nbr_cv_fold
                                                  , p_src_code){
-  #if (!is.loaded("mpi_initialize")) {
-  print('before load Rmpi')
   library("Rmpi")
-  #}
-  print("after load")
-  mpi.spawn.Rslaves(nslaves = 10)
+  mpi.spawn.Rslaves(nslaves = nbr_cv_fold)
   mpi.bcast.Robj2slave(df_expr_target)
   mpi.bcast.Robj2slave(df_expr_reg)
   mpi.bcast.Robj2slave(df_prior)
@@ -356,10 +352,8 @@ create_lasso_global_shrinkage_parallel = function(df_expr_target
   mpi.bcast.Robj2slave(p_src_code)
   mpi.bcast.Robj2slave(seed)
   mpi.bcast.Robj2slave(nbr_cv_fold)
-  print("after bcast")
   mpi.remote.exec(source(paste(p_src_code, "src/build_lasso/code/netprophet1/run_netprophet_parallel_single_process.r", sep="")))
   mpi.remote.exec(get_fold_nbr())
-  print(" after run")
   # all.folds = cv.folds(dim(df_expr_target)[2], nbr_cv_fold)
   df_lasso_net = lars.multi.optimize.parallel(df_expr_target,df_expr_reg,df_perturbed,df_prior,df_allowed)[[1]]
   

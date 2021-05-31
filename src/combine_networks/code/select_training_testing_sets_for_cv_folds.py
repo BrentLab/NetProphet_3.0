@@ -25,13 +25,14 @@ def write_training_testing_sets(l_in_name_net
     df_test_binding = df_binding.loc[df_binding['REGULATOR'].isin(d_fold__l_reg_testing[fold]), :]
     df_test_binding.to_csv(p_out_dir + 'fold' + str(fold) + '_test_binding.tsv', header=False, index=False, sep='\t')
 
-def select_write_training_testing_10_fold_cv(l_in_name_net
-                                             , l_in_path_net
-                                             , p_in_net_binding
-                                             , p_out_dir
-                                             , seed):
+def select_write_training_testing_sets_for_cv_folds(l_in_name_net
+                                                     , l_in_path_net
+                                                     , p_in_net_binding
+                                                     , p_out_dir
+                                                     , seed
+                                                     , nbr_fold):
     """
-    Select training and testing sets with 10-fold cross validation fashion
+    Select training and testing sets with folds cross validation fashion
     The selection is based on stratified sampling
     The file for training and testing sets are written in the p_output folder
     @param: l_t_name_p_in_net: lasso, de, and binding network. 
@@ -76,6 +77,7 @@ def select_write_training_testing_10_fold_cv(l_in_name_net
                                                                 df_binding=df_binding
                                                                 , p_out_dir=p_out_dir
                                                                 , s=seed
+                                                                , nbr_fold=nbr_fold
                                                                 )
 
     # ---------------------------------------------------------- #
@@ -84,7 +86,7 @@ def select_write_training_testing_10_fold_cv(l_in_name_net
     import multiprocessing as mp
     
     pool = mp.Pool(min([mp.cpu_count(), 4]))
-    pool.starmap(write_training_testing_sets, [(l_in_name_net, l_in_path_net, d_net_name__df, d_fold__l_reg_training, d_fold__l_reg_testing, df_binding, i, p_out_dir) for i in range(10)])
+    pool.starmap(write_training_testing_sets, [(l_in_name_net, l_in_path_net, d_net_name__df, d_fold__l_reg_training, d_fold__l_reg_testing, df_binding, i, p_out_dir) for i in range(nbr_fold)])
     pool.close()
     pool.join()
 
@@ -92,10 +94,11 @@ def select_write_training_testing_10_fold_cv(l_in_name_net
 def select_reg_for_training_testing(df_binding
                                     , p_out_dir
                                     , s
+                                    , nbr_fold
                                     ):
     """
     Select the regulators for the training and testing sets. Given the binding data, a stratified 
-    list of training and testing for 10-fold of CV is created. The stratification is based on the 
+    list of training and testing for folds of CV is created. The stratification is based on the 
     number of targets per TF 
     """
 
@@ -109,17 +112,19 @@ def select_reg_for_training_testing(df_binding
     # sort grouped regulators by number of target genes
     df_binding_grouped_sorted = df_binding_grouped.sort_values(ascending=False, by='VALUE')
     # initialize general variables
-    nbr_cutoff = int(df_binding_grouped_sorted.shape[0]/10)
-    size_last_cutoff = int(df_binding_grouped_sorted.shape[0]%10)
-    d_fold__l_reg_training = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[]}
-    d_fold__l_reg_testing = {0:[], 1:[], 2:[], 3:[], 4:[], 5:[], 6:[], 7:[], 8:[], 9:[]}
+    nbr_cutoff = int(df_binding_grouped_sorted.shape[0]/nbr_fold)
+    size_last_cutoff = int(df_binding_grouped_sorted.shape[0]%nbr_fold)
+    d_fold__l_reg_training, d_fold__l_reg_testing = {}, {}
+    for fold in range(nbr_fold):
+        d_fold__l_reg_training[fold] = []
+        d_fold__l_reg_testing[fold] = []
     # stratify the regulator based on the number of target genes
     for i in range(nbr_cutoff):
         # extract index start and end for cutoff
         if i == nbr_cutoff - 1:  # if last cutoff
-            idx_start, idx_end = i*10, i*10+10+size_last_cutoff
+            idx_start, idx_end = i*nbr_fold, i*nbr_fold+nbr_fold+size_last_cutoff
         else:
-            idx_start, idx_end = i*10, i*10+10
+            idx_start, idx_end = i*nbr_fold, i*nbr_fold+nbr_fold
         # extract list of regulators for that cutoff
         l_reg_cutoff = list(df_binding_grouped_sorted.iloc[idx_start:idx_end, :].index)
         # randomly permute the items of this list
@@ -127,12 +132,12 @@ def select_reg_for_training_testing(df_binding
         l_reg_cutoff = sample(l_reg_cutoff, len(l_reg_cutoff))
         # select regulators for training and testing
         for idx_reg, reg in enumerate(l_reg_cutoff):  # populate the list of regulators for testing
-            d_fold__l_reg_testing[idx_reg%10].append(reg)
-        for fold in range(10):  # populate the list of regulators for training
+            d_fold__l_reg_testing[idx_reg%nbr_fold].append(reg)
+        for fold in range(nbr_fold):  # populate the list of regulators for training
             d_fold__l_reg_training[fold] += [r for r in l_reg_cutoff if (r not in d_fold__l_reg_testing[fold]) and (int(df_binding_grouped_sorted[df_binding_grouped_sorted.index == r].VALUE) != 0)]
 
     # write the regulators for the training and testing sets
-    for fold in range(10):
+    for fold in range(nbr_fold):
         Series(d_fold__l_reg_training[fold], name='reg').to_csv(p_out_dir + 'fold' + str(fold) + '_train_reg', header=False, index=False)
         Series(d_fold__l_reg_testing[fold], name='reg').to_csv(p_out_dir + 'fold' + str(fold) + '_test_reg', header=False, index=False)
     return d_fold__l_reg_training, d_fold__l_reg_testing
@@ -146,16 +151,19 @@ def main():
                         help='list of name of networks such as binding and lasso')
     parser.add_argument('--l_in_path_net', '-l_in_path_net', help='list of paths of networks that names were provided')
     parser.add_argument('--p_in_net_binding', '-p_in_net_binding')
-    parser.add_argument('--p_out_dir', '-p_out_dir', help='path of output directory for the 10-fold data')
+    parser.add_argument('--nbr_fold', '-nbr_fold', type=int, help='number of folds for dividing data in CV such as 10-fold')
+    parser.add_argument('--p_out_dir', '-p_out_dir', help='path of output directory for the CV-folds data')
     parser.add_argument('--seed', '-seed', help='seed for selection', type=int, nargs='?', default=0)
+    
 
     args = parser.parse_args()
 
-    select_write_training_testing_10_fold_cv(l_in_name_net=args.l_in_name_net.split(',')
-                                     , l_in_path_net=args.l_in_path_net.split(',')
-                                     , p_in_net_binding=args.p_in_net_binding
-                                     , p_out_dir=args.p_out_dir
-                                     , seed=args.seed)
+    select_write_training_testing_sets_for_cv_folds(l_in_name_net=args.l_in_name_net.split(',')
+                                             , l_in_path_net=args.l_in_path_net.split(',')
+                                             , p_in_net_binding=args.p_in_net_binding
+                                             , p_out_dir=args.p_out_dir
+                                             , seed=args.seed
+                                             , nbr_fold=args.nbr_fold)
 
 if __name__ == '__main__':
     main()

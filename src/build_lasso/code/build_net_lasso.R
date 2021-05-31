@@ -1,20 +1,21 @@
-generate_lasso_net = function(p_in_target
-                              , p_in_reg
-                              , p_in_sample
-                              , p_in_expr_target
+generate_lasso_net = function(p_in_expr_target
                               , p_in_expr_reg
                               , p_out_dir
                               , flag_global_shrinkage
                               , flag_local_shrinkage
-                              , greenfield_method
                               , fname_lasso
                               , flag_parallel
                               , seed
                               , nbr_cv_fold
                               , p_src_code
                               , flag_microarray
-                              , p_lasso_greenfield
-                              , idx_reg_greenfield){
+                              , p_in_target="NONE"
+                              , p_in_reg="NONE"
+                              , p_in_sample="NONE"
+                              , greenfield_method="OFF"
+                              , p_lasso_greenfield=NULL
+                              , idx_reg_greenfield=NULL
+                             ){
   # ================================================================================================= #
   # |                            **** Load local R libraries ****                                   | #
   # | These libraries are developed by the lab, including:                                          | #
@@ -88,7 +89,6 @@ generate_lasso_net = function(p_in_target
      } 
     
    if((flag_global_shrinkage == "ON" && flag_parallel == "ON") || greenfield_method == "ONE"){
-     print('start')
      df_lasso_net = create_lasso_global_shrinkage_parallel(df_expr_target
                                                              , df_expr_reg
                                                              , df_allowed

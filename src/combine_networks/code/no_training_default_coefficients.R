@@ -3,19 +3,26 @@ apply_default_coefficients = function(l_coef
                                       , l_in_name_net
                                       , l_in_path_net
                                       , p_out_net
-                                      , model){
+                                      , model_name){
+  library("mlr")
   
-  df_data = read_data(model=model
+  df_data = read_data(model_name=model_name
                       , l_name_net=l_in_name_net
                       , l_path_net=l_in_path_net)
-
-  if (p_model != "NONE"){
-      model = readRDS(p_model)
-      df_pred = predict(model, df_data, type="response")
-  }else if (l_coef != "NONE"){
-      library("e1071")
-      df_pred = sigmoid(colSums(t(data.frame(rep(1, dim(df_data)[1]), df_data)) * l_coef))
-  }
+  print(df_data)
+  # if (p_model != "NONE"){
+  #     model = readRDS(p_model)
+  #     df_pred = predict(model, df_data, type="response")
+  # }else if (l_coef != "NONE"){
+  #     library("e1071")
+  #     df_pred = sigmoid(colSums(t(data.frame(rep(1, dim(df_data)[1]), df_data)) * l_coef))
+  # }
+  fact_col = colnames(df_data)[sapply(df_data, is.character)]
+  for(i in fact_col) set(df_data, j=i, value=factor(df_data[[i]]))
+  task = makeClassifTask(data=data.frame(df_data, target=factor(rep(1, dim(df_data)[1]))), target="target")
+  
+  model = readRDS(p_model)
+  df_pred = predict(model, task)$data$prob.1
   
   p_net = l_in_path_net[1]
   df_net = read.csv(p_net, header=FALSE, sep='\t')
@@ -56,5 +63,5 @@ if (sys.nframe() == 0){
                               , l_in_name_net=strsplit(opt$l_in_name_net, ',')[[1]]
                               , l_in_path_net=strsplit(opt$l_in_path_net, ',')[[1]]
                               , p_out_net=opt$p_out_net_np3
-                              , model=opt$in_model_name) 
+                              , model_name=opt$in_model_name) 
 }

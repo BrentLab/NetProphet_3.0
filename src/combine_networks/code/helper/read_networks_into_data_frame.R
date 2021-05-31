@@ -19,17 +19,31 @@ create_interaction = function(df_source_info, idx, col_name){
   abs(df_interaction)
 }
 
-create_sign_string = function(row){
-  c = ""
-  for (r in row){
-    if (r>0){
-      c = paste(c, 'P', sep='')
-    } else if (r<0){
-      c = paste(c, 'N', sep='')
-    }else{
-      c = paste(c, 'Z', sep='')
+# for combination
+create_sign_string = function(row
+                              , str_sign){
+    c = ""
+    if (str_sign == 'PNZ'){
+      for (r in row){
+        if (r>0){
+            c = paste(c, 'P', sep='')
+        } else if (r<0){
+            c = paste(c, 'N', sep='')
+        } else {
+            c = paste(c, 'Z', sep='')
+        }
+      }
+    } else if (str_sign == 'PN'){
+        for (r in row){
+            if (r>0){
+                c = paste(c, 'P', sep='')
+            } else {
+                c = paste(c, 'N', sep='')
+            }
+        }
+    } else {
+      q()
     }
-  }
   c
 }
 
@@ -37,6 +51,23 @@ create_sign_string = function(row){
 # |          *** End Helper functions ***             | #
 # ===================================================== #
 
+dummy_no_interaction = function(df_source_info
+                                , l_name_net
+                                , str_sign){
+  # dummy variables
+  l_sign = apply(df_source_info, 1, create_sign_string, str_sign)  # create the sign matrix using the helper function create_sign_string
+  df_sign = data.frame(l_sign)
+  colnames(df_sign) = c("sign")
+  df_dummy = dummy_cols(df_sign)
+  s_zeros = "sign_"
+  for (i in seq(dim(df_source_info)[2])){
+    s_zeros = paste(s_zeros, "Z", sep="")
+  }                                                                          
+  df_dummy = df_dummy[, -c(which(colnames(df_dummy) == "sign"), which(colnames(df_dummy) == s_zeros)) ]
+  
+  cbind(abs(df_source_info), df_dummy)
+  
+}
 
 
 # ===================================================== #
@@ -115,7 +146,8 @@ transform = function(df_source_info
 # ----------------------------------------------------- #
 
 dummy_transform = function(df_source_info
-                           , l_name_net){
+                           , l_name_net
+                           , str_sign){
     # interactions
     nbr_source_info = length(l_name_net)
     l_interaction = list()
@@ -157,7 +189,7 @@ dummy_transform = function(df_source_info
     df_transformed_interactions = data.frame(l_transformed_interactions)
     
     # dummy variables
-    l_sign = apply(df_source_info, 1, create_sign_string)  # create the sign matrix using the helper function create_sign_string
+    l_sign = apply(df_source_info, 1, create_sign_string, str_sign)  # create the sign matrix using the helper function create_sign_string
     df_sign = data.frame(l_sign)
     colnames(df_sign) = c("sign")
     df_dummy = dummy_cols(df_sign)
@@ -208,11 +240,14 @@ reduced = function(df_source_info
     
     # interactions of 2 and does not include pwm network
     combination_size = 2  # the number of elements in the interaction: 2 only interactions of two source of info are considered
-    nbr_source_info = length(l_name_net)                                  
-    c = combn(seq_len(nbr_source_info), combination_size)  # 2 rows for indexes of source of info included in the interaction, columns the different interactions of 2 [2 x 6]
+    nbr_source_info = length(l_name_net) 
     if ('pwm' %in% l_name_net){                                                   
-        df_source_info = df_source_info[, -c('pwm')]
+      df_source_info = df_source_info[, !names(df_source_info) %in% c('pwm')]
+      nbr_source_info = length(l_name_net) - 1
     }
+                                     
+    c = combn(seq_len(nbr_source_info), combination_size)  # 2 rows for indexes of source of info included in the interaction, columns the different interactions of 2 [2 x 6]
+   
     # calculate the interactions from c
     for (i in seq(dim(c)[2])){
       idx = c[, i]  # take interaction by interaction
@@ -226,7 +261,7 @@ reduced = function(df_source_info
     }
     
     # dummy variables    
-    if (dim(df_source_info)[2] == 3){
+    if (nbr_source_info == 3){
         l_design_matrix[['pos_pos_pos']] = as.integer(l_lasso>0 & l_de>0 & l_bart>0)
         l_design_matrix[['pos_pos_neg']] = as.integer(l_lasso>0 & l_de>0 & l_bart<0)
         l_design_matrix[['pos_neg_pos']] = as.integer(l_lasso>0 & l_de<0 & l_bart>0)
@@ -239,7 +274,7 @@ reduced = function(df_source_info
         l_design_matrix[['z_z_nz']]      = as.integer(l_lasso==0 & l_de==0 & l_bart!=0)
         l_design_matrix[['z_nz_z']]      = as.integer(l_lasso==0 & l_de!=0 & l_bart==0)
         l_design_matrix[['z_nz_nz']]     = as.integer(l_lasso==0 & l_de!=0 & l_bart!=0)
-    } else if (dim(df_source_info)[2] == 2){
+    } else if (nbr_source_info == 2){
         l_design_matrix[['pos_pos']] = as.integer(l_lasso>0 & l_de>0)
         l_design_matrix[['pos_neg']] = as.integer(l_lasso>0 & l_de<0)
         l_design_matrix[['neg_pos']] = as.integer(l_lasso<0 & l_de>0)
@@ -250,11 +285,55 @@ reduced = function(df_source_info
     data.frame(l_design_matrix)                                                   
 }
                                                                               
-                                                                                
 # ----------------------------------------------------- #
 # |                  * End reduced *                  | #
 # ----------------------------------------------------- #                                                                                 
 
+atomic = function(df_source_info
+                  , l_name_net){
+    
+    l_design_matrix = list()
+    for (name_net in l_name_net){
+        l_design_matrix[[name_net]] = df_source_info[, name_net] 
+    }
+    df = data.frame(l_design_matrix)
+    df
+}
+
+
+atomic_sign = function(df_source_info
+                        , l_name_net
+                        , str_sign){
+  
+  create_dummy_sign = function(item, str_sign){
+    s = ''
+    if (str_sign == 'PN'){
+      if (item > 0){
+        s = 'P'
+      } else {
+        s = 'N'
+      }
+    } else if (str_sign == 'PNZ'){
+      if (item > 0){
+        s = 'P'
+      } else if (item < 0){
+        s = 'N'
+      } else{
+        s = 'Z'
+      }
+    }
+  }
+  l_design_matrix = list()
+  for (name_net in l_name_net){
+    l_design_matrix[[paste(name_net, 'sign',sep='_')]] = sapply(unlist(df_source_info[, name_net]), create_dummy_sign, str_sign)
+  }
+  df_design_matrix = dummy_cols(data.frame(l_design_matrix)
+                                , remove_first_dummy=TRUE
+                                , remove_selected_columns=TRUE)
+  df_design_matrix = cbind(df_source_info, df_design_matrix)
+  df_design_matrix
+  
+}
 
 # ----------------------------------------------------- #
 # |                * Main Function *                  | #
@@ -263,26 +342,53 @@ read_data = function(model_name
                      , l_name_net
                      , l_path_net
                      , sep='\t'){
-  library("fastDummies")
-  nbr_net = length(l_path_net)
-  l_source_info_df = list()
-  for (i in seq(nbr_net)){
-    name = l_name_net[i]
-    path = l_path_net[i]
-    l_source_info_df[[name]] = unlist(read.csv(path, header=FALSE, sep=sep)[3])
-  }
-  df_source_info = data.frame(l_source_info_df)
-  rownames(df_source_info) = NULL
+    library("fastDummies")
+    nbr_net = length(l_path_net)
+    l_source_info_df = list()
+    for (i in seq(nbr_net)){
+        name = l_name_net[i]
+        path = l_path_net[i]
+        l_source_info_df[[name]] = unlist(read.csv(path, header=FALSE, sep=sep)[3])
+    }
+    df_source_info = data.frame(l_source_info_df)
+    rownames(df_source_info) = NULL
 
-  if (model_name == "dummy_transform"){
-    df = dummy_transform(df_source_info
-                         , l_name_net)
-  } else if (model_name == "transform"){
-    df = transform(df_source_info
-                   , l_name_net)
-  } else if (model_name == "reduced"){
-    df = reduced(df_source_info
-                 , l_name_net)
+    if (model_name == "dummy_transform_pnz"){
+        df = dummy_transform(df_source_info
+                             , l_name_net
+                             , 'PNZ')
+    } else if (model_name == "dummy_transform_pn"){
+        df = dummy_transform(df_source_info
+                             , l_name_net
+                             , 'PN')
+    } else if (model_name == "transform"){
+        df = transform(df_source_info
+                       , l_name_net)
+    } else if (model_name == "reduced"){
+        df = reduced(df_source_info
+                     , l_name_net)
+    } else if (model_name == "atomic"){
+      nbr_net = length(l_path_net)
+      df = data.frame(unlist(read.csv(l_path_net[1], header=FALSE, sep=sep)[3]))
+      for (i in seq(2, nbr_net, 1)){
+        path = l_path_net[i]
+        df = cbind(df,  unlist(read.csv(path, header=FALSE, sep=sep)[3]))
+      }
+      rownames(df) = NULL
+      colnames(df) = l_name_net
+      
+    } else if (model_name == "dummy_no_interaction_pn"){
+      df = dummy_no_interaction(df_source_info
+                                , l_name_net
+                                , 'PN')
+    } else if (model_name == "atomic_sign_pn"){
+      df = atomic_sign(df_source_info
+                       , l_name_net
+                       , 'PN')
+    } else if (model_name == "atomic_sign_pnz"){
+      df = atomic_sign(df_source_info
+                       , l_name_net
+                       , 'PNZ')
     }
     
     df

@@ -2,6 +2,7 @@
 singularity/*
 old/
 src/build_xgboost.R
+src/evaluate_networks
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

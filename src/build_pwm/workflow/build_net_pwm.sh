@@ -80,15 +80,10 @@ cmd_parse_bins="${p_src_code}src/build_pwm/wrapper/parse_quantized_bins.sh \
     --p_src_code ${p_src_code}"
 eval ${cmd_parse_bins}    
     
-echo "- infer DNA binding motifs using FIRE.."
-echo "nbrr_job : ${nbr_job}"
 while read reg; do
-    echo "${reg}.."
+    echo "   + reg: ${reg}.."
     if [ -f ${p_out_dir_tmp}network_bins/${reg} ]; then
         cmd_infer_motif=""
-#         if [ ${flag_slurm} == "ON" ]; then 
-#             cmd_infer_motif+="srun "
-#         fi
         cmd_infer_motif+="${p_src_code}src/build_pwm/wrapper/infer_motifs.sh \
                          --p_in_promoter ${p_in_promoter} \
                          --p_in_expr_file ${p_out_dir_tmp}network_bins/${reg} \
@@ -101,23 +96,21 @@ while read reg; do
        
        # manage the number of running jobs
        nbr_running_jobs=$(jobs -p | wc -l)
-       echo "running jobs: ${nbr_running_jobs}"
        while (( ${nbr_running_jobs} >= ${nbr_job} ))
        do
            sleep 1
            nbr_running_jobs=$(jobs -p | wc -l)
-           echo "running jobs: ${nbr_running_jobs}"
        done
     fi
 done < <(cut -f1 ${p_in_net})
-
+wait
 
 
 
 # =========================================================================== #
 # |                           *** Score Motifs ***                          | #
 # =========================================================================== #
-wait
+
 # define command: parse motif
 echo "- parse motiff summary.."
 cmd_parse_motif="${p_src_code}src/build_pwm/wrapper/parse_motif_summary.sh \
@@ -149,9 +142,8 @@ if [ -d ${p_out_dir_tmp}motifs_scores/ ]; then
     rm -r ${p_out_dir_tmp}motifs_scores/
 fi
 mkdir ${p_out_dir_tmp}motifs_scores/
-echo "nbr_job: ${nbr_job}"
 while read reg; do
-    echo "reg: ${reg}.."
+    echo "   + reg: ${reg}.."
     if [ -f ${p_out_dir_tmp}motifs_pfm/${reg} ]; then
         cmd_score_motif="${p_src_code}src/build_pwm/wrapper/score_motifs.sh \
                          --p_in_pfm_reg ${p_out_dir_tmp}motifs_pfm/${reg} \
@@ -165,21 +157,19 @@ while read reg; do
         eval ${cmd_score_motif}
 
         nbr_running_jobs=$(jobs -p | wc -l)
-        echo "nbr running jobs: ${nbr_running_jobs}"
         while (( ${nbr_running_jobs} > ${nbr_job} ))
         do
             sleep 1
             nbr_running_jobs=$(jobs -p | wc -l)
-            echo "nbr running jobs: ${nbr_running_jobs}"
         done
     fi
 done < <(cut -f1 ${p_in_net})
-
+wait
 
 # =========================================================================== #
 # |                          *** Build Network ***                          | #
 # =========================================================================== #
-wait
+
 
 cmd_build_net="${p_src_code}src/build_pwm/wrapper/build_net_motif.sh \
               --p_in_net ${p_in_net} \

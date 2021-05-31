@@ -30,6 +30,7 @@ do
     esac
 done
 
+
 cmd=""
 if [ ${flag_singularity} == "ON" ]; then
     if [ ${flag_slurm} == "ON" ]; then source ${p_src_code}src/helper/load_singularity.sh; fi
@@ -39,7 +40,7 @@ elif [ ${flag_singularity} == "OFF" ]; then
     if [ ${flag_slurm} == "ON" ]; then
         source ${p_src_code}src/helper/load_modules.sh
         source activate np3
-        ls -l ${SLURM_SUBMIT_DIR}np3/bin > /dev/null
+        ls -l ${CONDA_PREFIX}/bin > /dev/null
     fi
 fi
 

@@ -23,6 +23,9 @@ do
             seed)
                 seed="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
+            nbr_fold)
+                nbr_fold="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
                 
             # Output
             p_out_dir)
@@ -69,7 +72,7 @@ elif [ ${flag_singularity} == "OFF" ]; then
     if [ ${flag_slurm} == "ON" ]; then
         source ${p_src_code}src/helper/load_modules.sh
         source activate np3
-        ls -l ${SLURM_SUBMIT_DIR}/np3/bin > /dev/null
+        ls -l ${CONDA_PREFIX}/bin >> /dev/null
     fi
 fi
 
@@ -78,6 +81,7 @@ cmd+="python3 ${p_src_code}src/combine_networks/code/select_training_testing_set
     --l_in_path_net ${l_in_path_net} \
     --p_in_net_binding ${p_in_net_binding} \
     --seed ${seed} \
+    --nbr_fold ${nbr_fold} \
     --p_out_dir ${p_out_dir}"
 
 if [ ${flag_debug} == "ON" ]; then printf "***PYTHON CMD***\n${cmd}\n" >> ${p_progress}; fi
