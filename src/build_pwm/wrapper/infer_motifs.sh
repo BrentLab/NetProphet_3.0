@@ -35,7 +35,7 @@ done
 
 cmd=""
 if [ ${flag_singularity} == "ON" ]; then
-    p_src_code_fire=/home/packages_np3/FIRE-1.1a/
+    p_src_code_fire=/home/packages/FIRE-1.1a/
     if [ ${flag_slurm} == "ON" ]; then source ${p_src_code}src/helper/load_singularity.sh; fi
     export SINGULARITY_BINDPATH=${p_singularity_bindpath}
     cmd+="singularity exec ${p_singularity_img} "
@@ -53,5 +53,5 @@ cmd+="perl ${p_src_code_fire}fire.pl \
      --nodups=1 \
      --dorna=0 \
      --dodnarna=0 >> /dev/null"
-         
+       
 eval ${cmd} &> /dev/null

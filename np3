@@ -93,7 +93,7 @@ l_in_name_net=""
 l_in_path_net=""
 flag_training="OFF"
 combine_nbr_fold=10
-combine_slurm_mem=30G
+combine_slurm_mem=50G
 combine_slurm_nodes=10
 combine_slurm_ntasks_per_node=1
 combine_slurm_cpus_per_task=2
@@ -131,7 +131,6 @@ flag_run_all="ON"
 flag_run_lasso="OFF"
 flag_run_bart="OFF"
 flag_run_combine="OFF"
-flag_run_eval="OFF"
 flag_run_pwm="OFF"
 
 
@@ -157,10 +156,6 @@ do
             flag_run_pwm="ON"
             flag_run_all="OFF"
              ;;
-        e)
-            flag_run_eval="ON"
-            flag_run_all="OFF"
-            ;;
         h)
             usage
             exit 2
@@ -484,7 +479,7 @@ then
                           --mail-type=${mail_type} \
                           --mail-user=${mail_user} \
                           --mem=${combine_slurm_mem} \
-                          --nodes=1-${combine_slurm_nodes} \
+                          --nodes=${combine_slurm_nodes} \
                           --cpus-per-task=${combine_slurm_cpus_per_task} \
                           --ntasks-per-node=${combine_slurm_ntasks_per_node} \
                           --dependency=afterok:${job_id_pwm}:${job_id_bart}:${job_id_lasso} "
@@ -518,45 +513,4 @@ then
      
     echo "run COMBINE.."                 
     job_id_combine=$(echo $(eval ${cmd_run_combine}) | awk '{split($0, a, " "); print a[4]}')
-fi
-
-
-# ======================================================================================================= #
-# |                                       *** EVALUATE NETWORKS ***                                     | #
-# ======================================================================================================= #
-l_in_name_net+=",np3"
-l_in_path_net+=",${p_out_dir}net_np3.tsv"
-job_id_evaluate=1
-if [ ${flag_run_eval} == "ON" ] || [ ${flag_run_all} == "ON" ]
-then
-    cmd_run_eval=""
-    if [ ${flag_slurm} == "ON" ]; then
-        mkdir -p ${p_out_dir_logs}
-        cmd_run_eval+="sbatch \
-                          -o ${p_out_dir_logs}evaluate_networks_%J.out \
-                          -e ${p_out_dir_logs}evaluate_networks_%J.err \
-                          -J ${data}_eval \
-                          --mail-type=${mail_type} \
-                          --mail-user=${mail_user} \
-                          --mem=100G \
-                          --dependency=afterok:${job_id_pwm}:${job_id_bart}:${job_id_lasso}:${job_id_combine} "
-    fi
-    cmd_run_eval+="${p_src_code}src/evaluate_networks/wrapper/evaluate_with_binding.sh \
-                      --p_in_binding_event ${p_in_binding_event} \
-                      --l_in_name_net ${l_in_name_net} \
-                      --l_in_path_net ${l_in_path_net} \
-                      --nbr_bins 20 \
-                      --nbr_edges_per_reg 100 \
-                      --p_out_dir ${p_out_dir} \
-                      --f_out_name evaluation.tsv \
-                      --p_src_code ${p_src_code} \
-                      --flag_debug ${flag_debug} \
-                      --flag_slurm ${flag_slurm} \
-                      --flag_singularity ${flag_singularity} \
-                      --p_singularity_img ${p_singularity_img} \
-                      --p_singularity_bindpath ${p_singularity_bindpath}"
-     
-    echo "run evaluate.."                 
-    job_id_combine=$(echo $(eval ${cmd_run_eval}) | awk '{split($0, a, " "); print a[4]}')
-    
 fi

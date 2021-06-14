@@ -77,7 +77,7 @@ cmd_parse_bins="${p_src_code}src/build_pwm/wrapper/parse_quantized_bins.sh \
     --flag_singularity ${flag_singularity} \
     --p_singularity_img ${p_singularity_img} \
     --p_singularity_bindpath ${p_singularity_bindpath} \
-    --p_src_code ${p_src_code}"
+    --p_src_code ${p_src_code}"   
 eval ${cmd_parse_bins}    
     
 while read reg; do
@@ -91,7 +91,7 @@ while read reg; do
                          --flag_singularity ${flag_singularity} \
                          --p_singularity_img ${p_singularity_img} \
                          --p_singularity_bindpath ${p_singularity_bindpath} \
-                         --p_src_code ${p_src_code} &"
+                         --p_src_code ${p_src_code} &"                  
        eval ${cmd_infer_motif}
        
        # manage the number of running jobs
@@ -112,7 +112,7 @@ wait
 # =========================================================================== #
 
 # define command: parse motif
-echo "- parse motiff summary.."
+echo "- parse motif summary.."
 cmd_parse_motif="${p_src_code}src/build_pwm/wrapper/parse_motif_summary.sh \
     --p_in_dir_bins ${p_out_dir_tmp}network_bins/ \
     --p_out_motifs_list ${p_out_dir_tmp}motifs.txt \
@@ -181,5 +181,4 @@ cmd_build_net="${p_src_code}src/build_pwm/wrapper/build_net_motif.sh \
               --p_singularity_img ${p_singularity_img} \
               --p_singularity_bindpath ${p_singularity_bindpath} \
               --p_src_code ${p_src_code}"
-
 eval ${cmd_build_net}              
