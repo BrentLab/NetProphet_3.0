@@ -72,7 +72,7 @@ elif [ ${flag_singularity} == "OFF" ]; then
 fi
 
 cmd+="python3 ${p_src_code}src/combine_networks/code/select_training_testing_sets_for_small_subset.py \
---p_in_net_binding ${p_in_net_binding} \
+    --p_in_net_binding ${p_in_net_binding} \
     --l_in_name_net ${l_in_name_net} \
     --l_in_path_net ${l_in_path_net} \
     --seed ${seed} \

@@ -304,6 +304,7 @@ do
         elif [ ${flag_training} == "ON-SUB" ]
         then
             cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_small_subset.sh \
+                                  --p_in_binding_event ${p_in_binding_event} \
                                   --p_in_net_binding ${l_p_in_net_binding[i]} \
                                   --l_in_name_net ${l_l_in_name_net[i]} \
                                   --l_in_path_net ${l_l_in_path_net[i]} \

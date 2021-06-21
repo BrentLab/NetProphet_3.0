@@ -6,12 +6,14 @@ def select_write_training_testing_1_fold_cv(p_net_binding
                                             , p_out_dir):
     from pandas import read_csv, melt, Series
     from os import path, mkdir
+    import ntpath
     
     # if output directory does not exist, create it
     if not path.exists(p_out_dir):
         mkdir(p_out_dir)
         
     # read the binding network
+    fname_binding = ntpath.basename(p_net_binding)
     df_binding = read_csv(p_net_binding, header=None, sep='\t', low_memory=False)
     if len(df_binding.columns.to_list()) > 3:
         df_binding = read_csv(p_net_binding, header=0, index_col=0, sep='\t')
@@ -27,12 +29,13 @@ def select_write_training_testing_1_fold_cv(p_net_binding
                                            , nbr_reg=nbr_reg)
     # write binding data for training  
     df_binding_training = df_binding.loc[df_binding.REGULATOR.isin(l_reg_training), :]
-    df_binding_training.to_csv(p_out_dir + 'train_binding.tsv', header=False, index=False, sep='\t')
+    df_binding_training.to_csv(p_out_dir + fname_binding, header=False, index=False, sep='\t')
     
     # extract the training/testing for other networks: lasso, de, etc.
     for net_name, p_net in zip(l_net_name, l_p_net):
         if p_net == "NONE":
             continue
+        fname_net = ntpath.basename(p_net)
         df_net = read_csv(p_net, header=None, sep='\t', low_memory=False)
         if len(df_net.columns.to_list()) > 3: # this is a matrix, melt it
             df_net = read_csv(p_net, header=0, index_col=0, sep='\t')
@@ -41,14 +44,18 @@ def select_write_training_testing_1_fold_cv(p_net_binding
         df_net.columns = ['REGULATOR', 'TARGET', 'VALUE']
 
         # write training data
-        Series(l_reg_training, name='regulator').to_csv(p_out_dir + 'train_reg', header=False, index=False, sep='\t')
+        if fname_net.find('fold') != -1:
+            fname_reg = fname_net.split('_')[0] + '_'
+        else:
+            fname_reg = ''
+        Series(l_reg_training, name='regulator').to_csv(p_out_dir + fname_reg + 'train_reg', header=False, index=False, sep='\t')
         df_training = df_net.loc[df_net.REGULATOR.isin(l_reg_training), :]
-        df_training.to_csv(p_out_dir + 'train_' + net_name + '.tsv', header=False, index=False, sep='\t')
+        df_training.to_csv(p_out_dir + fname_net, header=False, index=False, sep='\t')
 
-        # write testing data
-        Series(l_reg_testing, name='regulator').to_csv(p_out_dir + 'test_reg', header=False, index=False, sep='\t')
-        df_testing = df_net.loc[df_net.REGULATOR.isin(l_reg_testing), :]
-        df_testing.to_csv(p_out_dir + 'test_' + net_name + '.tsv', header=False, index=False, sep='\t')
+#         # write testing data
+#         Series(l_reg_testing, name='regulator').to_csv(p_out_dir + 'test_reg', header=False, index=False, sep='\t')
+#         df_testing = df_net.loc[df_net.REGULATOR.isin(l_reg_testing), :]
+#         df_testing.to_csv(p_out_dir + 'test_' + net_name + '.tsv', header=False, index=False, sep='\t')
 
 
 def select_reg_for_training(df_binding
