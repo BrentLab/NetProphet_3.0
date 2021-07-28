@@ -32,7 +32,7 @@ cat << EOF
     --flag_training          : "ON-CV", or "ON-SUB" or "OFF" (optional, default is "OFF").
     method: default coef:
     --l_in_coef              :
-    --l_p_in_model           :
+    --p_in_model           :
     method: small subset     :
     --in_nbr_reg             :
     
@@ -94,7 +94,7 @@ l_in_path_net=""
 flag_training="OFF"
 combine_nbr_fold=10
 combine_slurm_mem=50G
-combine_slurm_nodes=10
+combine_slurm_nodes=11
 combine_slurm_ntasks_per_node=1
 combine_slurm_cpus_per_task=2
 
@@ -257,14 +257,8 @@ do
                     l_in_coef+=("${arg}")
                   done
                   ;;
-                l_p_in_model)
-                  nargs="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                  l_p_in_model=("${nargs}")
-                  for (( i=1;i<`expr ${nargs}+1`;i++ ))
-                  do
-                     arg="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                     l_p_in_model+=("${arg}")
-                  done
+                p_in_model)
+                  p_in_model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                   ;;
                 # method: small subset
                 in_nbr_reg)
@@ -491,7 +485,7 @@ then
                       --in_model_name ${in_model_name} \
                       --in_nbr_reg ${in_nbr_reg} \
                       --l_in_coef ${l_in_coef[@]} \
-                      --l_p_in_model ${l_p_in_model[@]} \
+                      --l_p_in_model ${p_in_model} \
                       --nbr_job ${nbr_job} \
                       --seed ${seed} \
                       --flag_intercept ${flag_intercept} \

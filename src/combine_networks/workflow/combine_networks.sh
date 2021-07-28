@@ -103,18 +103,8 @@ do
                         done
                     fi
                     ;;
-                l_p_in_model)
-                    nargs="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    if [ ${nargs} == "NONE" ]; then
-                        l_p_in_model=("NONE" "NONE")
-                    else
-                        l_p_in_model=()
-                        for (( i=1;i<`expr ${nargs}+1`;i++ ))
-                        do
-                            arg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                            l_p_in_model+=("${arg}")
-                        done
-                    fi
+                p_in_model)
+                    p_in_model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
                 
                 # Output
@@ -188,6 +178,7 @@ done
 # ======================================================================== #
 mkdir -p ${p_out_dir}
 mkdir -p ${p_out_dir}tmp_combine/
+mkdir -p ${p_out_dir}tmp_combine/network_construction/
 p_progress=${p_out_dir}tmp_combine/progress.txt
 p_reg=${p_out_dir}tmp_combine/reg.tsv
 p_target=${p_out_dir}tmp_combine/target.tsv
@@ -220,33 +211,35 @@ eval ${cmd_get_lists}
 # ------------------------------------------------------------------------ #
 # |                     *** Create Binding Network ***                   | #
 # ------------------------------------------------------------------------ #
-echo "- create binding networks from binding events.." >> ${p_progress}
-cmd_create_binding_net="${p_src_code}src/combine_networks/wrapper/create_binding_network.sh \
-                          --p_in_binding_event ${p_in_binding_event} \
-                          --p_in_reg ${p_reg} \
-                          --p_in_target ${p_target} \
-                          --p_out_net_binding ${p_net_binding} \
-                          --flag_slurm ${flag_slurm} \
-                          --flag_singularity ${flag_singularity} \
-                          --p_singularity_img ${p_singularity_img} \
-                          --p_singularity_bindpath ${p_singularity_bindpath} \
-                          --p_src_code ${p_src_code} \
-                          --p_progress ${p_progress} \
-                          --flag_debug ${flag_debug}"
+if [ ${p_in_binding_event} != "NONE" ] 
+then
+    echo "- create binding networks from binding events.." >> ${p_progress}
+    cmd_create_binding_net="${p_src_code}src/combine_networks/wrapper/create_binding_network.sh \
+                              --p_in_binding_event ${p_in_binding_event} \
+                              --p_in_reg ${p_reg} \
+                              --p_in_target ${p_target} \
+                              --p_out_net_binding ${p_net_binding} \
+                              --flag_slurm ${flag_slurm} \
+                              --flag_singularity ${flag_singularity} \
+                              --p_singularity_img ${p_singularity_img} \
+                              --p_singularity_bindpath ${p_singularity_bindpath} \
+                              --p_src_code ${p_src_code} \
+                              --p_progress ${p_progress} \
+                              --flag_debug ${flag_debug}"
 
-if [ ${flag_debug} == "ON" ]; then echo "${cmd_create_binding_net}" >> ${p_progress}; fi
-eval ${cmd_create_binding_net}
-
+    if [ ${flag_debug} == "ON" ]; then echo "${cmd_create_binding_net}" >> ${p_progress}; fi
+    eval ${cmd_create_binding_net}
+fi
 
 # ------------------------------------------------------------------------ #
 # |              *** Split Network based on Perturbation ***             | #
 # ------------------------------------------------------------------------ #
-echo "- split networks based on perturbations with/without DE network.." >> ${p_progress}
-cmd_split_networks_based_on_de="${p_src_code}src/combine_networks/wrapper/split_networks_based_on_perturbed_reg.sh \
+echo "- exclude autoregulation and flatten networks.." >> ${p_progress}
+cmd_exclude_autoregulation="${p_src_code}src/combine_networks/wrapper/exclude_autoregulation_and_flatten_network.sh \
                                 --l_in_path_net ${l_in_path_net} \
                                 --l_in_name_net ${l_in_name_net} \
                                 --p_in_net_binding ${p_net_binding} \
-                                --p_out_dir ${p_out_dir}tmp_combine/ \
+                                --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
                                 --flag_slurm ${flag_slurm} \
                                 --flag_singularity ${flag_singularity} \
                                 --p_singularity_img ${p_singularity_img} \
@@ -254,128 +247,87 @@ cmd_split_networks_based_on_de="${p_src_code}src/combine_networks/wrapper/split_
                                 --p_src_code ${p_src_code} \
                                 --p_progress ${p_progress} \
                                 --flag_debug ${flag_debug}"
-if [ ${flag_debug} == "ON" ]; then echo "${cmd_split_networks_based_on_de}" >> ${p_progress}; fi
-eval ${cmd_split_networks_based_on_de}
+if [ ${flag_debug} == "ON" ]; then echo "${cmd_exclude_autoregulation}" >> ${p_progress}; fi
+eval ${cmd_exclude_autoregulation}
 
 
 # ------------------------------------------------------------------------ #
 # |                       *** Combine networks ***                       | #
-# | combine networks, two sets of networks: (1) networks with DE info,   | #
-# | and (2) networks without DE info                                     | #
 # ------------------------------------------------------------------------ #
-# set the list of inputs for with_de/without_de runs
-l_l_in_name_net=(${l_in_name_net} $(create_l_name_net_without_de ${l_in_name_net}))
-l_l_in_path_net=($(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/with_de/) \
-              $(create_paths ${l_l_in_name_net[1]} net ${p_out_dir}tmp_combine/without_de/))
-l_p_in_net_binding=(${p_out_dir}tmp_combine/with_de/net_binding.tsv ${p_out_dir}tmp_combine/without_de/net_binding.tsv)
-l_dir=(with_de without_de)
+echo "- combine networks with ${flag_training}" >> ${p_progress}
+# define command depending on the combination method: train with 10-CV, small subset, or not training at all
+if [ ${flag_training} == "ON-CV" ]; then
+    cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_cv_folds.sh \
+                           --p_in_binding_event ${p_in_binding_event} \
+                           --p_in_net_binding ${p_out_dir}tmp_combine/network_construction/net_binding.tsv \
+                           --l_in_name_net ${l_in_name_net} \
+                           --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
+                           --in_model_name ${in_model_name} \
+                           --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
+                           --flag_intercept ${flag_intercept} \
+                           --flag_penalize ${flag_penalize} \
+                           --nbr_fold ${nbr_fold} \
+                           --penalize_nbr_fold ${penalize_nbr_fold} \
+                           --seed ${seed} \
+                           --flag_slurm ${flag_slurm} \
+                           --slurm_nbr_tasks ${slurm_nbr_tasks} \
+                           --slurm_nbr_cpus ${slurm_nbr_cpus} \
+                           --slurm_nbr_nodes ${slurm_nbr_nodes} \
+                           --slurm_mem ${slurm_mem} \
+                           --flag_singularity ${flag_singularity} \
+                           --p_singularity_img ${p_singularity_img} \
+                           --p_singularity_bindpath ${p_singularity_bindpath} \
+                           --p_src_code ${p_src_code} \
+                           --p_progress ${p_progress} \
+                           --flag_debug ${flag_debug} \
+                           --nbr_job ${nbr_job}"
+elif [ ${flag_training} == "ON-SUB" ]
+then
+    cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_small_subset.sh \
+                          --p_in_binding_event ${p_in_binding_event} \
+                          --p_in_net_binding ${p_out_dir}tmp_combine/network_construction/net_binding.tsv \
+                          --l_in_name_net ${l_in_name_net} \
+                          --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
+                          --in_nbr_reg ${in_nbr_reg} \
+                          --in_model_name ${in_model_name} \
+                          --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
+                          --flag_intercept ${flag_intercept} \
+                          --flag_penalize ${flag_penalize} \
+                          --penalize_nbr_fold ${penalize_nbr_fold} \
+                          --seed ${seed} \
+                          --flag_slurm ${flag_slurm} \
+                          --slurm_nbr_tasks ${slurm_nbr_tasks} \
+                          --slurm_nbr_cpus ${slurm_nbr_cpus} \
+                          --slurm_mem ${slurm_mem} \
+                          --flag_singularity ${flag_singularity} \
+                          --p_singularity_img ${p_singularity_img} \
+                          --p_singularity_bindpath ${p_singularity_bindpath} \
+                          --p_src_code ${p_src_code} \
+                          --p_progress ${p_progress} \
+                          --flag_debug ${flag_debug} \
+                          --nbr_job ${nbr_job}"
 
-# loop over with/without DE directories, and create separate models for each data
-for (( i=0;i<${#l_dir[@]};i++ ))
-do
-    if [ -d ${p_out_dir}tmp_combine/${l_dir[i]}/ ]; then
-        echo "- combine networks for ${l_dir[i]}, with ${flag_training}" >> ${p_progress}
-        # define command depending on the combination method: train with 10-CV, small subset, or not training at all
-        if [ ${flag_training} == "ON-CV" ]; then
-            cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_cv_folds.sh \
-                                   --p_in_binding_event ${p_in_binding_event} \
-                                   --p_in_net_binding ${l_p_in_net_binding[i]} \
-                                   --l_in_name_net ${l_l_in_name_net[i]} \
-                                   --l_in_path_net ${l_l_in_path_net[i]} \
-                                   --in_model_name ${in_model_name} \
-                                   --p_out_dir ${p_out_dir}tmp_combine/${l_dir[i]}/ \
-                                   --flag_intercept ${flag_intercept} \
-                                   --flag_penalize ${flag_penalize} \
-                                   --nbr_fold ${nbr_fold} \
-                                   --penalize_nbr_fold ${penalize_nbr_fold} \
-                                   --seed ${seed} \
-                                   --flag_slurm ${flag_slurm} \
-                                   --slurm_nbr_tasks ${slurm_nbr_tasks} \
-                                   --slurm_nbr_cpus ${slurm_nbr_cpus} \
-                                   --slurm_nbr_nodes ${slurm_nbr_nodes} \
-                                   --slurm_mem ${slurm_mem} \
-                                   --flag_singularity ${flag_singularity} \
-                                   --p_singularity_img ${p_singularity_img} \
-                                   --p_singularity_bindpath ${p_singularity_bindpath} \
-                                   --p_src_code ${p_src_code} \
-                                   --p_progress ${p_progress} \
-                                   --flag_debug ${flag_debug} \
-                                   --nbr_job ${nbr_job}"
-        elif [ ${flag_training} == "ON-SUB" ]
-        then
-            cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_small_subset.sh \
-                                  --p_in_binding_event ${p_in_binding_event} \
-                                  --p_in_net_binding ${l_p_in_net_binding[i]} \
-                                  --l_in_name_net ${l_l_in_name_net[i]} \
-                                  --l_in_path_net ${l_l_in_path_net[i]} \
-                                  --in_nbr_reg ${in_nbr_reg} \
-                                  --in_model_name ${in_model_name} \
-                                  --p_out_dir ${p_out_dir}tmp_combine/${l_dir[i]}/ \
-                                  --flag_intercept ${flag_intercept} \
-                                  --flag_penalize ${flag_penalize} \
-                                  --penalize_nbr_fold ${penalize_nbr_fold} \
-                                  --seed ${seed} \
-                                  --flag_slurm ${flag_slurm} \
-                                  --slurm_nbr_tasks ${slurm_nbr_tasks} \
-                                  --flag_singularity ${flag_singularity} \
-                                  --p_singularity_img ${p_singularity_img} \
-                                  --p_singularity_bindpath ${p_singularity_bindpath} \
-                                  --p_src_code ${p_src_code} \
-                                  --p_progress ${p_progress} \
-                                  --flag_debug ${flag_debug} \
-                                  --nbr_job ${nbr_job}"
+elif [ ${flag_training} == "OFF" ]
+then
+    cmd_combine_networks="${p_src_code}src/combine_networks/wrapper/no_training_default_coefficients.sh \
+                          --l_in_name_net ${_l_in_name_net} \
+                          --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
+                          --in_model_name ${in_model_name} \
+                          --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
+                          --flag_slurm ${flag_slurm} \
+                          --flag_singularity ${flag_singularity} \
+                          --p_singularity_img ${p_singularity_img} \
+                          --p_singularity_bindpath ${p_singularity_bindpath} \
+                          --p_src_code ${p_src_code} \
+                          --p_progress ${p_progress} \
+                          --flag_debug ${flag_debug} \
+                          --in_coef ${l_in_coef[i]} \
+                          --p_in_model ${p_in_model}"
+fi 
 
-        elif [ ${flag_training} == "OFF" ]
-        then
-            cmd_combine_networks="${p_src_code}src/combine_networks/wrapper/no_training_default_coefficients.sh \
-                                  --l_in_name_net ${l_l_in_name_net[i]} \
-                                  --l_in_path_net ${l_l_in_path_net[i]} \
-                                  --in_model_name ${in_model_name} \
-                                  --p_out_dir ${p_out_dir}tmp_combine/${l_dir[i]}/ \
-                                  --flag_slurm ${flag_slurm} \
-                                  --flag_singularity ${flag_singularity} \
-                                  --p_singularity_img ${p_singularity_img} \
-                                  --p_singularity_bindpath ${p_singularity_bindpath} \
-                                  --p_src_code ${p_src_code} \
-                                  --p_progress ${p_progress} \
-                                  --flag_debug ${flag_debug} \
-                                  --in_coef ${l_in_coef[i]} \
-                                  --p_in_model ${l_p_in_model[i]}"
-        fi 
+# run command
+if [ ${flag_debug} == "ON" ]; then printf "${cmd_combine_networks} for ${l_dir[i]}\n" >> ${p_progress}; fi
+eval ${cmd_combine_networks}
 
-        # run command
-        if [ ${flag_debug} == "ON" ]; then printf "${cmd_combine_networks} for ${l_dir[i]}\n" >> ${p_progress}; fi
-        eval ${cmd_combine_networks}
-    fi
-done
-
-
-# ------------------------------------------------------------------------ #
-# |                    *** Concatenate networks ***                      | #
-# |                Concatenate networks with & without DE                | #
-# ------------------------------------------------------------------------ #
-if [ -d ${p_out_dir}tmp_combine/${l_dir[0]}/ ] && [ -d ${p_out_dir}tmp_combine/${l_dir[1]}/ ]; then
-    # define command
-    cmd_concat_networks="${p_src_code}src/combine_networks/wrapper/concat_networks.sh \
-                         --p_in_net_np3_1 ${p_out_dir}tmp_combine/${l_dir[0]}/net_np3.tsv \
-                         --p_in_net_np3_2 ${p_out_dir}tmp_combine/${l_dir[1]}/net_np3.tsv  \
-                         --p_out_net_np3 ${p_out_dir}net_np3.tsv \
-                         --flag_concat 'with_and_without_de' \
-                         --flag_slurm ${flag_slurm} \
-                         --flag_singularity ${flag_singularity} \
-                         --p_singularity_img ${p_singularity_img} \
-                         --p_singularity_bindpath ${p_singularity_bindpath} \
-                         --p_src_code ${p_src_code} \
-                         --p_progress ${p_progress} \
-                         --flag_debug ${flag_debug}"
-
-    # run concat networks
-    if [ ${flag_debug} == "ON" ]; then echo "${cmd_concat_networks}" >> ${p_progress}; fi
-    eval ${cmd_concat_networks}
-    
-elif [ -d ${p_out_dir}tmp_combine/${l_dir[0]}/ ]; then
-    cp ${p_out_dir}tmp_combine/${l_dir[0]}/net_np3.tsv  ${p_out_dir}net_np3.tsv
-    
-elif [ -d ${p_out_dir}tmp_combine/${l_dir[1]}/ ]; then
-    cp ${p_out_dir}tmp_combine/${l_dir[1]}/net_np3.tsv ${p_out_dir}net_np3.tsv
-fi
+# copy network
+cp ${p_out_dir}tmp_combine/network_construction/net_np3.tsv  ${p_out_dir}net_np3.tsv

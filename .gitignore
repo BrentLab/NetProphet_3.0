@@ -1,3 +1,8 @@
+src/build_bart/code/build_net_bart_old.R
+src/build_bart/code/netprophet2/build_bart_network_old.r
+src/combine_networks/code/select_training_testing_sets_for_small_subset_old.py
+src/combine_networks/workflow/combine_with_training_on_small_subset_old.sh
+src/combine_networks/code/split_networks_based_on_perturbed_reg_old.py
 !singularity/recipe.txt
 singularity/*
 old/

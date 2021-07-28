@@ -605,24 +605,23 @@ train_test_with_xgboost_optimize = function(p_in_binding_train
     learner = makeLearner("classif.xgboost", predict.type="prob")
     learner$par.vals = list(objective="binary:logistic"
                             , eval_metric="logloss"
-                            , nrounds=100L, eta=0.1)
+                            , nrounds=20L, eta=0.1)
     
     # set parameter space
     params = makeParamSet(makeDiscreteParam("booster", values=c("gbtree"))
-                          , makeIntegerParam("max_depth", lower=1L, upper=20L)
-                          , makeNumericParam("min_child_weight", lower=1L, upper=10L)
+                          , makeIntegerParam("max_depth", lower=1L, upper=10L)
+                          , makeNumericParam("min_child_weight", lower=1L, upper=5L)
                           , makeNumericParam("subsample", lower=0.5, upper=1)
                           , makeNumericParam("colsample_bytree", lower=0.5, upper=1)
                           , makeNumericParam("gamma", lower=0, upper=10)
                           , makeNumericParam("lambda", lower=0, upper=1)
-                          , makeNumericParam("alpha", lower=0, upper=1)
                           )
     
     # set resampling strategy
     rdesc = makeResampleDesc("CV", stratify=TRUE, iters=5L)
     
     # search strategy
-    ctrl = makeTuneControlRandom(maxit = 20L)
+    ctrl = makeTuneControlRandom(maxit = 10L)
     
     # set parallel backend
     parallelStartSocket(cpus=detectCores())
@@ -641,6 +640,8 @@ train_test_with_xgboost_optimize = function(p_in_binding_train
     
     # Train model with tuned parameters
     model = train(learner=tuned_param, task=train_task)
+    
+    gc()
     
     predict_test = predict(model, test_task)
     predict_train = predict(model, train_task)

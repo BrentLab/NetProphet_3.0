@@ -58,7 +58,7 @@ getBartNetwork <- function(tgtLevel, tfLevel, regMat, unperturbedTfLevel, nBin =
 	result;
 }
 
-bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, verbose = TRUE, noiseModel = c("lognormal", "normal", "linear", "sqrt"), ...) {
+bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, verbose = TRUE, noiseModel = c("normal", "lognormal" , "linear", "sqrt"), ...) {
 	# use BART to predict expressions
 	# expression: training target expression levels, in foldchange with respect to wildtype
 	# tfLevel: training regulator expression levels, in foldchange with respect to wildtype, the log of which will be fed to BART
@@ -73,10 +73,12 @@ bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, verbose = TRUE, noi
 	if (is.character(noiseModel)) { # determine transform and backTransform from noiseModel
 		noiseModel <- match.arg(noiseModel);
 		if (noiseModel == "normal" || noiseModel == "linear") {
+
 			transform <- function(x) x;
 			backTransform <- function(x) x;
 		} else {
 			if (noiseModel == "lognormal") {
+			  print('m logged')
 				transform <- function(x) log(x);
 				backTransform <- function(x) exp(x);
 			} else {
@@ -97,8 +99,10 @@ bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, verbose = TRUE, noi
 			}
 		}
 	}
+	print("outside if")
 	# calling BART
-	barted <- bartMultiresponse(x.train = log(tfLevel), y.train = transform(tgtLevel), x.test = log(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE,...); 
+	# barted <- bartMultiresponse(x.train = log(tfLevel), y.train = transform(tgtLevel), x.test = log(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE,...); 
+	barted <- bartMultiresponse(x.train = transform(tfLevel), y.train = transform(tgtLevel), x.test = transform(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE,...); 
 	result <- c(result, barted);
 	result$predicted <- backTransform(barted$yMean); # transform the prediction back to the space of fold changes
 	result;

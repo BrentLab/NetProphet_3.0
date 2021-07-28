@@ -21,19 +21,23 @@ generate_bart_net = function(p_in_expr_target
     # p_in_expr_target='netprophet/net_in/all_kem_expr_6112_1485_indexed'
     # p_in_expr_reg='netprophet/net_in/all_kem_expr_reg_313_1485_indexed'
     
-    df_expr_target = read.csv(p_in_expr_target, header=TRUE, row.names=1, sep="\t")
-    df_expr_reg = read.csv(p_in_expr_reg, header=TRUE, row.names=1, sep="\t")
+    df_expr_target = read.csv(p_in_expr_target, header=TRUE, row.names=1, sep="\t", numerals = "no.loss")
+    df_expr_reg = read.csv(p_in_expr_reg, header=TRUE, row.names=1, sep="\t", numerals = "no.loss")
     l_in_target = as.factor(rownames(df_expr_target))
     l_in_reg = as.factor(rownames(df_expr_reg))
     l_in_sample = as.factor(colnames(df_expr_target))
+    
+    options(digits=22)
+    df_expr_reg = data.frame(lapply(df_expr_reg, function(x) as.double(as.character(x))))
+    df_expr_target = data.frame(lapply(df_expr_target, function(x) as.double(as.character(x))))
     # rownames(df_expr_target) = NULL
     # colnames(df_expr_target) = NULL
     # rownames(df_expr_reg) = NULL
     # colnames(df_expr_reg) = NULL
     
     # transform from log(fc) to fc
-    df_expr_target = 2**df_expr_target
-    df_expr_reg = 2**df_expr_reg
+    # df_expr_target = 2**df_expr_target
+    # df_expr_reg = 2**df_expr_reg
     
     # generate intermediate files (allowed and perturbed)
     df_allowed_perturbed = generate_allowed_perturbed_matrices(l_in_target, l_in_reg, l_in_sample, NULL, p_src_code)
