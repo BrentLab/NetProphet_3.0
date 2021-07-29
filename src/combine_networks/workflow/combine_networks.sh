@@ -90,18 +90,8 @@ do
                     in_nbr_reg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
                 # default
-                l_in_coef)
-                    nargs="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    if [ ${nargs} == "NONE" ]; then
-                        l_in_coef=("NONE" "NONE")
-                    else
-                        l_in_coef=("")
-                        for (( i=1;i<1`expr ${nargs}+1`;i++ ))
-                        do
-                            arg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                            l_in_coef+=("${arg}")
-                        done
-                    fi
+                in_coef)
+                    in_coef="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
                 p_in_model)
                     p_in_model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
@@ -310,7 +300,7 @@ then
 elif [ ${flag_training} == "OFF" ]
 then
     cmd_combine_networks="${p_src_code}src/combine_networks/wrapper/no_training_default_coefficients.sh \
-                          --l_in_name_net ${_l_in_name_net} \
+                          --l_in_name_net ${l_in_name_net} \
                           --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
                           --in_model_name ${in_model_name} \
                           --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
@@ -321,7 +311,7 @@ then
                           --p_src_code ${p_src_code} \
                           --p_progress ${p_progress} \
                           --flag_debug ${flag_debug} \
-                          --in_coef ${l_in_coef[i]} \
+                          --in_coef ${in_coef} \
                           --p_in_model ${p_in_model}"
 fi 
 

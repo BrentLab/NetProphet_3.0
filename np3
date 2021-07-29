@@ -99,8 +99,8 @@ combine_slurm_ntasks_per_node=1
 combine_slurm_cpus_per_task=2
 
 # default coef
-l_in_coef="NONE"
-l_p_in_model="NONE"
+in_coef="NONE"
+p_in_model="NONE"
 # small subset
 in_nbr_reg="NONE"
 # regression
@@ -248,14 +248,8 @@ do
                   flag_intercept="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
                 # method: default param
-                l_in_coef)
-                  narg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                  l_in_coef=("${narg}")
-                  for (( i=1;i<`expr ${narg}+1`;i++ ))
-                  do
-                    arg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    l_in_coef+=("${arg}")
-                  done
+                in_coef)
+                  in_coef="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                   ;;
                 p_in_model)
                   p_in_model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
@@ -484,8 +478,8 @@ then
                       --l_in_path_net ${l_in_path_net} \
                       --in_model_name ${in_model_name} \
                       --in_nbr_reg ${in_nbr_reg} \
-                      --l_in_coef ${l_in_coef[@]} \
-                      --l_p_in_model ${p_in_model} \
+                      --in_coef ${in_coef} \
+                      --p_in_model ${p_in_model} \
                       --nbr_job ${nbr_job} \
                       --seed ${seed} \
                       --flag_intercept ${flag_intercept} \

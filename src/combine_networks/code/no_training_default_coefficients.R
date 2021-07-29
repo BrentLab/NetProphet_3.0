@@ -9,7 +9,6 @@ apply_default_coefficients = function(l_coef
   df_data = read_data(model_name=model_name
                       , l_name_net=l_in_name_net
                       , l_path_net=l_in_path_net)
-  print(df_data)
   # if (p_model != "NONE"){
   #     model = readRDS(p_model)
   #     df_pred = predict(model, df_data, type="response")
