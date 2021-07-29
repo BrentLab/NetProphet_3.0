@@ -1,14 +1,21 @@
-# NetProphet 2.0
+# NetProphet 3.0
 
-NetProphet 2.0 is our second-generation “data light” TF-network mapping algorithm. It requires only data that can be generated from low-cost, reliable, and easily scalable experimental methods. NetProphet 2.0 relies on three fundamental ideas. First, combining several expression-based network algorithms that use different types of models can yield better results than using either one alone. Second, TFs with similar DNA binding domains (in terms of amino acid sequence) tend to bind similar sets of target genes. Third, even an imperfect net-work map can be used to infer models of each TF’s DNA binding prefer-ences from the promoter sequences of its putative targets and these mod-els can be used to further refine the network. The following is our algorithm overview.
+Network Inference package that uses XGBoost, a machine learning algorithm. 
 
 ![NetProphet2.0_overview](NP2_overview.png)
 
-Our implementation is available for both serial processing on a local desktop and parallel computing on a HPC cluster. The parallel computing mode requires the SLURM workload manager for job scheduling. 
+# I. The easiest, with Singularity container
 
-### Wiki Page
+## 1. Install Singularity and download the container
 
-Please find the details on installation, data preparation, code execution, and result interpretation in our wiki page [here](https://github.com/yiming-kang/NetProphet_2.0/wiki).
+- Refer to Singularity website to install singularity >=
+- Dowload singularity container from here 
+- Please find the details on installation, data preparation, code execution, and result interpretation in our wiki page [here](https://github.com/yiming-
+
+## 2. Run Command with toy example
+
+
+kang/NetProphet_2.0/wiki).
 
 1. Configure NetProphet 2.0 directory
 	
