@@ -79,8 +79,23 @@ From: ubuntu:18.04
     packages /home/
 
 # to build singularity container
-#sudo singularity build --sandbox s_np recipe.txt
-# compress it
-#sudo tar --hard-dereference -czf s_np.tar.gz s_np
+# sudo singularity build --sandbox s_np recipe.txt
+# ========================================================= #
+# |   *** move container from one place to another ***    | #
+# |               *** such with scp -r ***                | #
+# ========================================================= #
+# compress it, and then it can be transferred coz its size is smaller 
+# sudo tar --hard-dereference -czf s_np.tar.gz s_np
 # decompree it
-#tar -xf s_np.tar.gz
+# tar -xf s_np.tar.gz
+# ========================================================= #
+# |   *** push container to cloud, then it can be  ***    | #
+# |             *** loaded from sylabs ***                | #
+# ========================================================= #
+# 1. create an account with sylabs, 2. an access token, then 3. push it to clould
+# Refer to this page to create an account and access token: https://sylabs.io/guides/3.3/user-guide/cloud_library.html
+# To be able to push the container to clould, first it needs to be packaged in sif file
+# sudo singularity build s_np.sif s_np
+# singularity remote login SylabsClould
+# singularity push -U s_np.sif library://dabid/default/s_np3
+
