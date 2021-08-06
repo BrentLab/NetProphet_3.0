@@ -8,7 +8,7 @@ Network Inference package that uses XGBoost, a machine learning algorithm.
 
 ## 1. Install Singularity and download the container
 
-- Refer to ![Singularity website](https://singularity.hpcng.org/user-docs/3.6/quick_start.html#quick-installation-steps) and install singularity >=3.6.4
+- Refer to [Singularity website](https://singularity.hpcng.org/user-docs/3.6/quick_start.html#quick-installation-steps) and install singularity >=3.6.4
 
 ## 2. Run Command with toy example
 
