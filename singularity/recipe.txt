@@ -51,7 +51,10 @@ From: ubuntu:18.04
     R --slave -e 'install.packages("Matrix")'
     R --slave -e 'install.packages("abind")'
     R --slave -e 'install.packages("lars")'
-
+    R --slave -e 'install.packages("xgboost")'
+    R --slave -e 'install.packages("mlr")'
+    R --slave -e 'install.packages("parallel")'
+    R --slave -e 'install.packages("parallelMap")'
 
     # install FIRE
     cd /home/packages/
