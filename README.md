@@ -22,12 +22,31 @@ Refer to this wiki [page](https://github.com/BrentLab/NetProphet_3.0/wiki/Advanc
 
 # II. Run NetProphet 3.0
 
-## Run with a toy example
+## With a toy example
+This NetProphet3.0 command assumes that singularity container will be used. If not, have ``` --flag_singularity OFF ```.  
+```
+code_path=/path/of/NetProphet3.0/code/
+p_out_dir=/path/of/output/directory/
+p_singularity_img=/path/of/singularity/container/
+p_singularity_bindpath=/path/of/link/path  # see below section for more info
 
+${code_path}np3 -a \
+    --p_in_expr_target ${code_path}toy_example/zev_expr_500_100_indexed \
+    --p_in_expr_reg ${code_path}toy_example/zev_expr_reg_50_100_indexed \
+    --p_in_promoter ${code_path}toy_example/promoter.scer.fasta \
+    --flag_training OFF \
+    --p_in_model ${code_path}model/kem_model.RData \
+    --p_out_dir ${p_out_dir} \
+    --flag_singularity ON \
+    --p_singularity_img ${p_singularity_img} \
+    --p_singularity_bindpath ${p_singularity_bindpath} \
+```
 ## More about np3 command and options
-- For Usage type ``` np3 -h ```
-- Run NetProphet 3.0 in SLURM environment
-- NetProphet 3.0 modes
-   - 10 fold of CV
-   - prebuilt model
-   - subset of TFs
+- Usage: ``` np3 -h ```
+- NetProphet with SLURM environment
+- NetProphet with Singularity
+- Run Individual components of NetProphet
+- NetProphet has three modes
+   - Train with 10-CV
+   - Train with small subset of TFs
+   - No Training, use pre-built model
