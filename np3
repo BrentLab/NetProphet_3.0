@@ -419,7 +419,7 @@ then
     nbr_job_pwm=${nbr_job}
     if [ ${flag_slurm} == "ON" ]; then
         mkdir -p ${p_out_dir_logs}tmp/
-        nbr_job_pwm=50
+        nbr_job_pwm=25
         cmd_run_pwm+="sbatch \
                       -o ${p_out_dir_logs}build_pwm_%J.out \
                       -e ${p_out_dir_logs}build_pwm_%J.err \
@@ -427,7 +427,7 @@ then
                       --mail-type=${mail_type} \
                       --mail-user=${mail_user} \
                       --nodes=1 \
-                      --ntasks=10 \
+                      --ntasks=5 \
                       --cpus-per-task=2 \
                       -D ${p_out_dir_logs}tmp/ \
                       --dependency=afterok:${job_id_bart} "
