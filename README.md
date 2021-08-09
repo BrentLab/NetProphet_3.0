@@ -8,6 +8,7 @@ The easiest way to run this package is with **singularity container**. Once sing
 
 - Refer to Singularity [website](https://singularity.hpcng.org/user-docs/3.6/quick_start.html#quick-installation-steps) and install singularity >=3.6.4
 - load s_np container from sylab cloud with this command ``` singularity pull library://dabid/default/s_np:sha256.2c48c295ab321b5fc6c79132934aef7f5a317beb46698ad879fd45bb2440c344 ```
+- rename the container with a shorted file name, so it is easier to use: ``` s_np_sha256.2c48c295ab321b5fc6c79132934aef7f5a317beb46698ad879fd45bb2440c344.sif s_np.sif ```
 
 ## More advanced, install all dependencies
 Refer to wiki page to install depencies for NetProphet 3.0
