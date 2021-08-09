@@ -1,14 +1,13 @@
 # NetProphet 3.0
-NetProphet3.0 is a package for network inference that leverage machine learning with XGboost. The easiest way to run this package is with **singularity container**. Once singularity is installed on your computer, there is no need to install any more packages. If you are more adventurous, you can install all NetProphet 3.0 dependencies, and still be able to run it.
+NetProphet3.0 is for network inference, it leverages machine learning to optimize for that. 
+The easiest way to run this package is with **singularity container**. Once singularity is installed on your computer, you can load NetProphet 3.0 container and immediately start running this package. If you are more adventurous, you can install all dependencies, and still be able to run NetProphet 3.0. All instructions are below.
 
 # I. Install NetProphet 3.0
 
 ## The easiest, with Singularity container
 
-Install Singularity & download s_np container developed by Brent Lab
-
 - Refer to Singularity [website](https://singularity.hpcng.org/user-docs/3.6/quick_start.html#quick-installation-steps) and install singularity >=3.6.4
-- load s_np container from sylab cloud with this command ``` singularity pull  ```
+- load s_np container from sylab cloud with this command ``` singularity pull library://dabid/default/s_np:sha256.2c48c295ab321b5fc6c79132934aef7f5a317beb46698ad879fd45bb2440c344 ```
 
 ## More advanced, install all dependencies
 Refer to wiki page to install depencies for NetProphet 3.0
@@ -16,7 +15,7 @@ Refer to wiki page to install depencies for NetProphet 3.0
 
 # II. Run NetProphet 3.0
 
-## The fastest, run toy example
+## Run with a toy example
 
 ## Learn more about NetProphet 3.0 options
 - For Usage type ``` np3 -h ```
