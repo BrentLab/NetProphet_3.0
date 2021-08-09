@@ -11,7 +11,7 @@ The easiest way to run this package is with **singularity container**. Once sing
 - rename the container with a shorted file name, so it is easier to use: ``` mv s_np_sha256.2c48c295ab321b5fc6c79132934aef7f5a317beb46698ad879fd45bb2440c344.sif s_np.sif ```
 
 ## More advanced, install all dependencies
-Refer to wiki page to install depencies for NetProphet 3.0
+Refer to this [wiki page](https://github.com/BrentLab/NetProphet_3.0/wiki/Advanced-Installation) for installing NetProphet dependencies
 
 
 # II. Run NetProphet 3.0
