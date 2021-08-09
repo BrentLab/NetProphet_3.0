@@ -29,12 +29,21 @@ From: ubuntu:18.04
     pip3 install scipy 
 
     # install Openmpi
+    apt-get install build-essential
     cd /home/packages
     tar -zxf openmpi-1.10.2.tar.gz
     cd openmpi-1.10.2
     ./configure --prefix=/home/opt/openmpi
     make
     make install
+    
+    # set a non-interactive installation
+    export DEBIAN_FRONTEND=noninteractive
+    # install tzdata package
+    apt-get install -y tzdata
+    # set you timezone
+    ln -fs /usr/share/zoneinfo/America/New_York /etc/localtime
+    dpkg-reconfigure --frontend noninteracive tzdata
     
     # install R & R packages
     apt-get install r-base -y
