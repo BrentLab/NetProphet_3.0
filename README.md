@@ -46,7 +46,7 @@ ${code_path}np3 -a \
 ```
 ./${p_src_code}np3 -h 
 ```
-- NetProphet with SLURM environment
+- [NetProphet with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
 - NetProphet with Singularity
 - Run Individual components of NetProphet
 - NetProphet has three modes
