@@ -42,7 +42,10 @@ ${code_path}np3 -a \
     --p_singularity_bindpath ${p_singularity_bindpath} \
 ```
 ## More about np3 command and options
-- Usage: ``` ./${p_src_code}np3 -h ```
+- Usage: 
+```
+./${p_src_code}np3 -h 
+```
 - NetProphet with SLURM environment
 - NetProphet with Singularity
 - Run Individual components of NetProphet
