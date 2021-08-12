@@ -47,8 +47,8 @@ ${code_path}np3 -a \
 ./${p_src_code}np3 -h 
 ```
 - [NetProphet with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
-- NetProphet with Singularity
-- Run Individual components of NetProphet
+- [NetProphet with Singularity](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-Singularity)
+- [Run Individual components of NetProphet](https://github.com/BrentLab/NetProphet_3.0/wiki/_new?wiki%5Bname%5D=_Footer)
 - NetProphet has three modes
    - Train with 10-CV
    - Train with small subset of TFs
