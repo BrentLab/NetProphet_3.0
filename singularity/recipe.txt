@@ -110,4 +110,5 @@ From: ubuntu:18.04
 # sudo singularity build s_np.sif s_np
 # singularity remote login SylabsClould
 # singularity push -U s_np.sif library://dabid/default/s_np3
-
+# to get back the original folder (not a sif version of it)
+# sudo singularity build --sandbox s_np s_np.sif

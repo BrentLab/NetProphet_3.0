@@ -8,57 +8,57 @@ cat << EOF
     netprophet3.0 [options]
     
     INPUT arguments:
-    --p_in_expr_target       : input file for expression of target genes (target x sample)
-    --p_in_expr_reg          : input file for expression of regulators (reg x sample)
-    --p_in_net_de            : input file for network of differential expression
-    --p_in_binding_event     : input file for binding events |REGULATOR|TARGET|
-    --seed                   : seed for generating the fold cross valition (default 747)
+    --p_in_expr_target            : input file for expression of target genes (target x sample)
+    --p_in_expr_reg               : input file for expression of regulators (reg x sample)
+    --p_in_net_de                 : input file for network of differential expression
+    --p_in_binding_event          : input file for binding events |REGULATOR|TARGET|
+    --seed                        : seed for generating the fold cross valition (default 747)
     
     LASSO arguments:
-    --flag_local_shrinkage   : "ON" for estimating a shrinkage parameter for every target gene, "OFF" otherwise (default "ON")
-    --flag_global_shrinkage  : "ON" for estimating a shrinkage parameter for all target genes, "OFF" otherwise (default "OFF")
-    --flag_microarray        : "MICROARRAY" for microarray expression data, "RNA-SEQ" for RNA-Seq data
-    --lasso_nbr_fold         : number of folds used for estimating lambda in lasso (optional, default 10)
+    --flag_local_shrinkage        : "ON" for estimating a shrinkage parameter for every target gene, "OFF" otherwise (default "ON")
+    --flag_global_shrinkage       : "ON" for estimating a shrinkage parameter for all target genes, "OFF" otherwise (default "OFF")
+    --flag_microarray             : "MICROARRAY" for microarray expression data, "RNA-SEQ" for RNA-Seq data
+    --lasso_nbr_fold              : number of folds used for estimating lambda in lasso (optional, default 10)
         
     PWM arguments:
-    --p_in_promoter          : path of promoter fasta sequences for building PWM networks 
+    --p_in_promoter               : path of promoter fasta sequences for building PWM networks 
     
     COMBINE arguments:
-    --l_in_name_net          :
-    --l_in_path_net          :
-    --in_model_name          :
-    --flag_penalize          : "ON" or "L1", "L2", or "L1_L2" (optional, default is "ON")
-    --penalize_nbr_fold      : number of CV folds for estimating optimal lambda in penalization
-    --flag_training          : "ON-CV", or "ON-SUB" or "OFF" (optional, default is "OFF").
-    method: default coef     :
-    --p_in_model             :
-    method: small subset     :
-    --in_nbr_reg             :
+    --l_in_name_net               : a string of name of networks: "lasso,de,bart,pwm"
+    --l_in_path_net               : a string of path of networks: "${path_lasso},${path_de},${path_bart},${path_pwm}" 
+    --flag_penalize               : "ON" or "L1", "L2", or "L1_L2" or "XGBOOST-OPTIMIZE" (optional, default is "OFF")
+    --flag_training               : "ON-CV", or "ON-SUB" or "OFF" (optional, default is "OFF")
+    combine method: default coef  :
+    --p_in_model                  : path of pre-built model, goes with flag_training="OFF"
+    combine method: small subset  :
+    --in_nbr_reg                  : number of regulators (TFs) for training, goes flag_training="ON-SUB"
+    combine method: 10cv          :
+    --combine_nbr_fold            : number of cross-validation default 10, goes with flag_training="ON-CV"
     
     OUTPUT arguments:
-    --p_out_dir              : path of output directory
+    --p_out_dir                   : path of output directory
     
     LOGISTIC arguments:
-    --p_src_code             : path for source of code (optional)
+    --p_src_code                  : path for source of code (optional)
     
     SINGULARITY arguments:
-    --flag_singularity       : "ON" or "OFF", default "ON" for using singularity container 
-    --p_singularity_img      : path of singularity container
-    --p_singularity_bindpath : path of directory of output file
+    --flag_singularity            : "ON" or "OFF", default "ON" for using singularity container 
+    --p_singularity_img           : path of singularity container
+    --p_singularity_bindpath      : path of directory of output file
     
     SLURM arguments:
-    --flag_slurm             : "ON" for parallel (slurm) run, "OFF" for sequential run
-    --p_out_dir_logs         : output file for logs (.out & .err) for slurm runs
-    --mail_user              : mail address of the user for slurm run logs
-    --mail_type              : when to send an email to the user (default FAIL)
-    --data                   : prefix of job names for slurm jobs      
+    --flag_slurm                  : "ON" for (slurm) run, "OFF" otherwise.
+    --p_out_dir_logs              : output file for logs (.out & .err) for slurm runs
+    --mail_user                   : mail address of the user for slurm run logs
+    --mail_type                   : when to send an email to the user (default FAIL)
+    --data                        : prefix of job names for slurm jobs      
     
-    -h                       : display usage for netprophet3.0 commandline
-    -a                       : run ALL components
-    -l                       : run only the LASSO component
-    -b                       : run only the BART component
-    -c                       : run only the COMBINE component
-    -e                       : run only the EVALUATION component 
+    -h                            : display usage for netprophet3.0 commandline
+    -a                            : run ALL components
+    -l                            : run only the LASSO component
+    -b                            : run only the BART component
+    -m                            : run only the PWM component
+    -c                            : run only the COMBINE component
     
 EOF
 }
@@ -90,21 +90,28 @@ bart_slurm_ntasks=15
 p_in_binding_event="NONE"
 l_in_name_net=""
 l_in_path_net=""
-flag_training="OFF"
+in_model_name="atomic"
+
+# COMBINATION 10CV
 combine_nbr_fold=10
+
+# COMBINATION SMALL SUBSET
+in_nbr_reg="NONE"
+
+# COMBINATION PRE-BUILT MODEL
+flag_training="OFF"
+flag_penalize="OFF"
+in_coef="NONE"
+p_in_model="NONE"
+
+# COMBINATION SLURM
 combine_slurm_mem=50G
 combine_slurm_nodes=11
 combine_slurm_ntasks_per_node=1
 combine_slurm_cpus_per_task=2
 
-# default coef
-in_coef="NONE"
-p_in_model="NONE"
-# small subset
-in_nbr_reg="NONE"
-# regression
+# COMBINATION WITH REGRESSION
 flag_intercept="ON"
-flag_penalize="OFF"
 penalize_nbr_fold=10
 
 # LOGISTICS
