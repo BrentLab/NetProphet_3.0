@@ -30,9 +30,8 @@ cat << EOF
     --flag_penalize          : "ON" or "L1", "L2", or "L1_L2" (optional, default is "ON")
     --penalize_nbr_fold      : number of CV folds for estimating optimal lambda in penalization
     --flag_training          : "ON-CV", or "ON-SUB" or "OFF" (optional, default is "OFF").
-    method: default coef:
-    --l_in_coef              :
-    --p_in_model           :
+    method: default coef     :
+    --p_in_model             :
     method: small subset     :
     --in_nbr_reg             :
     
