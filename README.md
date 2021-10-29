@@ -25,7 +25,7 @@ Clone NetProphet3.0 in your home directory or any other path in your computer
 ## With a toy example
 This NetProphet3.0 command assumes that singularity container will be used. If not, have ``` --flag_singularity OFF ```.  
 ```
-code_path=/path/of/NetProphet3.0/
+code_path=/path/of/NetProphet_3.0/
 p_out_dir=/path/of/output/directory/
 p_singularity_img=/path/of/singularity/container/
 p_singularity_bindpath=/path/of/link/path  # see below section for more info
