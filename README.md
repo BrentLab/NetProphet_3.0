@@ -20,6 +20,7 @@ Refer to this wiki [page](https://github.com/BrentLab/NetProphet_3.0/wiki/Advanc
 
 
 # II. Run NetProphet 3.0
+Clone NetProphet3.0 in your home directory or any other path in your computer
 
 ## With a toy example
 This NetProphet3.0 command assumes that singularity container will be used. If not, have ``` --flag_singularity OFF ```.  
