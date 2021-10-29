@@ -1,6 +1,5 @@
 # NetProphet 3.0
-NetProphet3.0 is for network inference, it leverages machine learning to optimize for that. 
-The easiest way to run this package is with **singularity container**. Once singularity is installed on your computer, you can load NetProphet 3.0 container and immediately start running this package. If you are more adventurous, you can install all dependencies, and still be able to run NetProphet 3.0. All instructions are below.
+NetProphet3.0 is network inference package, based on two main components: 1) generates different networks by regression algorithms (LASSO and BART), and other algorithms (PWM), 2) combines these generated intermediate networks in a final potential better network. The easiest way to run this package is with **singularity container**. Once singularity is installed on your computer, you can load the below container and start running NetProphet3.0. You can also install all dependencies, then run NetProphet 3.0, but it is more tedious.
 
 # I. Install NetProphet 3.0
 
