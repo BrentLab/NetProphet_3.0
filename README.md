@@ -54,6 +54,6 @@ ${code_path}np3 -a \
     - Train for integration
     - No Training, use a pre-built model (yeast)
 - NetProphet3.0 other modules
-    - LASSO
+    - [LASSO](https://github.com/BrentLab/NetProphet_3.0/wiki/LASSO)
     - BART
     - PWM 
