@@ -46,10 +46,14 @@ ${code_path}np3 -a \
 ```
 ./${p_src_code}np3 -h 
 ```
-- [NetProphet with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
-- [NetProphet with Singularity](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-Singularity)
-- [Run Individual components of NetProphet](https://github.com/BrentLab/NetProphet_3.0/wiki/_new?wiki%5Bname%5D=_Footer)
-- NetProphet has three modes
-   - Train with 10-CV
-   - Train with small subset of TFs
-   - No Training, use pre-built model
+- [NetProphet3.0 with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
+- [NetProphet3.0 with Singularity](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-Singularity)
+- NetProphet3.0 combination method
+    - Train with 10CV
+    - Train with a subset of TFs
+    - Train for integration
+    - No Training, use a pre-built model (yeast)
+- NetProphet3.0 other modules
+    - LASSO
+    - BART
+    - PWM 
