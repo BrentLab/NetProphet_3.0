@@ -8,11 +8,11 @@ NetProphet3.0 is network inference package, first it generates different network
 - Refer to Singularity [website](https://singularity.hpcng.org/user-docs/3.6/quick_start.html#quick-installation-steps) and install singularity >=3.5.2
 - load s_np container from sylab cloud with this command
    ``` 
-   singularity pull library://dabid/default/s_np3:sha256.cec2a1ebb7798992807bd48725ce172d8fa8fd580539c774ad4f478f109ae243
+   singularity pull library://dabid/default/s_np3:sha256.cec2a1ebb7798992807bd48725ce172d8fa8fd580539c774ad4f478f109ae243.sif
    ```
 - rename the container with a shorted file name, so it is easier to use. 
    ``` 
-   mv s_np3:sha256.cec2a1ebb7798992807bd48725ce172d8fa8fd580539c774ad4f478f109ae243 s_np 
+   mv s_np3:sha256.cec2a1ebb7798992807bd48725ce172d8fa8fd580539c774ad4f478f109ae243.sif s_np3.sif 
    ```
 
 ## More advanced, install all dependencies
