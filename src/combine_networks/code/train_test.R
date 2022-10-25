@@ -688,7 +688,7 @@ if (sys.nframe() == 0){
         , l_name_net = make_option(c("--l_in_name_net"))
         , l_path_net_train = make_option(c("--l_in_path_net_train"))
         , l_path_net_test = make_option(c("--l_in_path_net_test"))
-        , model_name = make_option(c("--in_model_name"), type="character", help="string of model")
+        , model_name = make_option(c("--in_model_name"), type="character", default="atomic", help="string of model")
         
         # Output
         , p_out_pred_train = make_option(c("--p_out_pred_train"), type="character", help="path of output for predicting the training data")
@@ -699,14 +699,14 @@ if (sys.nframe() == 0){
 
         # logistics
         , p_src_code = make_option(c("--p_src_code"), type="character", help="path of source of code for netprophet")
-        , nbr_job = make_option(c("--nbr_job"), type="integer", help="number of tasks/jobs running in parallel")
+        , nbr_job = make_option(c("--nbr_job"), type="integer", default=2, help="number of tasks/jobs running in parallel")
         , nbr_cores = make_option(c("--nbr_cores"), type="integer", help="nbr of cores for mc.lbart")
         
         # prediction parameters/options
         , flag_intercept = make_option(c("--flag_intercept"), type="character", help="ON or OFF for intercept generation")
         
         # penalization
-        , flag_penalize = make_option(c("--flag_penalize"), type="character", help="ON or OFF for penalization/regularization")
+        , flag_penalize = make_option(c("--flag_penalize"), type="character", default="XGBOOST-OPTIMIZE", help="ON or OFF for penalization/regularization")
         , p_dir_penalize = make_option(c("--p_dir_penalize"), type="character", help="path of directory for penalization intermediate files")
         , penalize_nbr_fold = make_option(c("--penalize_nbr_fold"), type="integer", help="number of CV folds for penalization/regularization")                                      
     ))

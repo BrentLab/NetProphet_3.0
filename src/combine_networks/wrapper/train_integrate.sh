@@ -13,38 +13,26 @@ do
     -)
         case "${OPTARG}" in
             # Input
-            p_in_binding_train)
-                p_in_binding_train="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            p_in_binding)
+                p_in_binding="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            l_in_path_net_train)
-                l_in_path_net_train="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            l_in_path_net_test)
-                l_in_path_net_test="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            l_in_path_net)
+                l_in_path_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
             l_in_name_net)
                 l_in_name_net="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
+            in_nbr_reg)
+                in_nbr_reg="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
+            seed)
+                seed="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                ;;
             
             # Output
-            p_out_pred_train)
-                p_out_pred_train="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            p_out_pred)
+                p_out_pred="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            p_out_pred_test)
-                p_out_pred_test="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_out_model_summary)
-                p_out_model_summary="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            p_out_model)
-                p_out_model="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-            flag_penalize)
-                flag_penalize="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
-#             p_out_dir)
-#                 p_out_dir="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-#                 ;;
                 
             # Singularity
             flag_singularity)
@@ -61,8 +49,8 @@ do
             flag_slurm)
                 flag_slurm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            slurm_ntasks_per_node)
-                slurm_ntasks_per_node="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+            slurm_ntasks)
+                slurm_ntasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
                 
             # logistics
@@ -75,9 +63,24 @@ do
             p_progress)
                 p_progress="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
+                
         esac;;
     esac
-done         
+done
+
+# echo "p_in_binding_train: ${p_in_binding_train}"
+# echo "l_in_path_net_train: ${l_in_path_net_train}"
+# echo "l_in_name_net: ${l_in_name_net}"
+# echo "nbr_reg_train: ${nbr_reg_train}"
+# echo "p_out_pred_train: ${p_out_pred_train}"
+# echo "flag_singularity: ${flag_singularity}"
+# echo "p_singularity_img: ${p_singularity_img}"
+# echo "p_singlarity_bindpath: ${p_singularity_bindpath}"
+# echo "flag_slurm: ${flag_slurm}"
+# echo "slurm_ntasks: ${slurm_ntasks}"
+# echo "p_src_code: ${p_src_code}"
+# echo "flag_debug: ${flag_debug}"
+# echo "p_progress: ${p_progress}"
 
 # ======================================================== #
 # |                 *** Define Command ***               | #
@@ -95,22 +98,18 @@ elif [ ${flag_singularity} == "OFF" ]; then
 fi
 
 # continue defining command
-cmd+="Rscript ${p_src_code}src/combine_networks/code/train_test.R \
-             --p_in_binding_train ${p_in_binding_train} \
+cmd+="Rscript ${p_src_code}src/combine_networks/code/train_integrate.R \
+             --p_in_binding ${p_in_binding} \
              --l_in_name_net ${l_in_name_net} \
-             --l_in_path_net_train ${l_in_path_net_train} \
-             --l_in_path_net_test ${l_in_path_net_test} \
-             --p_out_pred_train ${p_out_pred_train} \
-             --p_out_pred_test ${p_out_pred_test} \
-             --p_out_model_summary ${p_out_model_summary} \
-             --p_out_model ${p_out_model} \
-             --p_src_code ${p_src_code} \
-             --nbr_cores ${slurm_ntasks_per_node} \
-             --flag_penalize ${flag_penalize}"
+             --l_in_path_net ${l_in_path_net} \
+             --in_nbr_reg ${in_nbr_reg} \
+             --p_out_pred ${p_out_pred} \
+             --seed ${seed} \
+             --slurm_ntasks ${slurm_ntasks}"
              
 # ======================================================== #
 # |                  *** Run Command ***                 | #
 # ======================================================== #
-# run command
+# # run command
 if [ ${flag_debug} == "ON" ]; then printf "***R CMD***\n${cmd}\n" >> ${p_progress}; fi
 eval ${cmd}

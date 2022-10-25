@@ -1,3 +1,3 @@
 #!/bin/bash
 
-module load singularity/2.4
+module load singularity/3.6.2

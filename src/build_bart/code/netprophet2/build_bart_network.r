@@ -6,7 +6,8 @@
 # if (!require("Matrix")) try(install.packages("Matrix"));
 # if (!require("abind")) try(install.packages("abind"));
 # if (!require("restorepoint")) try(install.packages("restorepoint")); ## deprecated
-getBartNetwork <- function(tgtLevel, tfLevel, regMat, unperturbedTfLevel, nBin = 3, ...) {
+getBartNetwork <- function(tgtLevel, tfLevel, regMat, ntree, unperturbedTfLevel, nBin = 3, ...) {
+	print(ntree)
 	# use BART to generate a network structure prediction
 	# tgtLevel: training target expression levels, in foldchange with respect to wildtype
 	# tfLevel: training regulator expression levels, in foldchange with respect to wildtype, the log of which will be fed to BART
@@ -43,7 +44,7 @@ getBartNetwork <- function(tgtLevel, tfLevel, regMat, unperturbedTfLevel, nBin =
 	testTfLevel[ix] <- c(result$perturbedTfLevel); # filling perturbed TF levels to testTfLevel
 	#
 	# calling BART
-	barted <- bartExpr(tgtLevel = tgtLevel, tfLevel = tfLevel, regMat = regMat, testTfLevel = testTfLevel,...);
+	barted <- bartExpr(tgtLevel = tgtLevel, tfLevel = tfLevel, regMat = regMat, testTfLevel = testTfLevel, ntree=ntree, ...);
 	result <- c(result, barted);
 	#
 	# reshaping results
@@ -58,7 +59,7 @@ getBartNetwork <- function(tgtLevel, tfLevel, regMat, unperturbedTfLevel, nBin =
 	result;
 }
 
-bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, verbose = TRUE, noiseModel = c("normal", "lognormal" , "linear", "sqrt"), ...) {
+bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, ntree, verbose = TRUE, noiseModel = c("normal", "lognormal" , "linear", "sqrt"), ...) {
 	# use BART to predict expressions
 	# expression: training target expression levels, in foldchange with respect to wildtype
 	# tfLevel: training regulator expression levels, in foldchange with respect to wildtype, the log of which will be fed to BART
@@ -102,13 +103,13 @@ bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, verbose = TRUE, noi
 	print("outside if")
 	# calling BART
 	# barted <- bartMultiresponse(x.train = log(tfLevel), y.train = transform(tgtLevel), x.test = log(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE,...); 
-	barted <- bartMultiresponse(x.train = transform(tfLevel), y.train = transform(tgtLevel), x.test = transform(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE,...); 
+	barted <- bartMultiresponse(x.train = transform(tfLevel), y.train = transform(tgtLevel), x.test = transform(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE, ntree=ntree, ...); 
 	result <- c(result, barted);
 	result$predicted <- backTransform(barted$yMean); # transform the prediction back to the space of fold changes
 	result;
 }
 
-bartMultiresponse <- function(x.train, y.train, x.test = NULL, allowed, simplify = TRUE, verbose = TRUE, mpiComm, blockSize, saveTo, ...) {
+bartMultiresponse <- function(x.train, y.train, ntree, x.test = NULL, allowed, simplify = TRUE, verbose = TRUE, mpiComm, blockSize, saveTo, ...) {
 	# wrapper for using bart on multiple responses, able to invoke mpi
 	# allowed: matrix whose ij entry tells if explanatory variable i should be used for response j; by default, if variables names are given in the colnames of x.train and y.train, every explanatory relation is allowed except for a variable explaining itself
 	# mpiComm: missing or integer; if specified, will invoke mpi on the given comm number mpiComm (see package Rmpi for details)
@@ -140,6 +141,7 @@ bartMultiresponse <- function(x.train, y.train, x.test = NULL, allowed, simplify
 			x.train = theX,
 			y.train = theY,
 			x.test = theTestX,
+			ntree=ntree,
 			...
 		);
 	}
@@ -196,6 +198,7 @@ bartMultiresponse <- function(x.train, y.train, x.test = NULL, allowed, simplify
 		mpi.bcast.Robj2slave(x.test, comm = mpiComm);
 		mpi.bcast.Robj2slave(allowed, comm = mpiComm);
 		mpi.bcast.Robj2slave(bartRobust, comm = mpiComm);
+		mpi.bcast.Robj2slave(ntree, comm=mpiComm);
 		try(mpi.bcast.Rfun2slave(comm = mpiComm));
 		environment(applicand) <- globalenv(); # very important, so function applicand broadcasted to other mpi processes will read variables from their global environments instead of bringing this environment with it
 		for (i in seq(nBlock)) {
@@ -223,7 +226,7 @@ bartMultiresponse <- function(x.train, y.train, x.test = NULL, allowed, simplify
 	}
 }
 
-bartRobust <- function(x.train, y.train, x.test, simplify = FALSE, keepBartObj = TRUE, keepevery = 1, verbose = TRUE, sigest = NA, ...) {
+bartRobust <- function(x.train, y.train, x.test, ntree, simplify = FALSE, keepBartObj = TRUE, keepevery = 1, verbose = TRUE, sigest = NA, ...) {
 	# wrap bart to a more robust function, circumventing some bugs there, and adding some useful stats about the query prediction in fields in the result:
 	# 	$barted: the orignal bart object returned
 	# 	$yMean: mean of posterior prediction, rows are samples, ncol = 1;
@@ -258,7 +261,7 @@ bartRobust <- function(x.train, y.train, x.test, simplify = FALSE, keepBartObj =
 			keepevery = keepevery,
 			verbose = (verbose != 0),
 			sigest = sigest, 
-			ntree = 400,
+			ntree = ntree,
 			...
 		);
 		# summarizing results

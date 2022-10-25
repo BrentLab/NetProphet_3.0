@@ -8,7 +8,8 @@ singularity/*
 old/
 src/build_xgboost.R
 src/evaluate_networks
-
+toy_example/res/
+toy_example/res_s_np3/
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

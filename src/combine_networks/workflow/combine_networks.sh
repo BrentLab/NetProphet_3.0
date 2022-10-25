@@ -28,27 +28,6 @@ function create_paths(){
     echo "${l_path_net}"
 }
 
-function create_l_name_net_without_de(){
-    # parameters
-    l_name_net=${1}
-    
-    IFS=',' read -ra l_name <<< "${l_name_net}"  # put the string ${l_name_net} into an array ${l_name}
-    
-    # loop over the name of networks to create the names without de
-    for (( i=0;i<${#l_name[@]};i++ ))
-    do
-        if [ ${l_name[i]} != "de" ]; then
-            if [ -z "${l_name_net_without_de}" ]; then
-                l_name_net_without_de="${l_name[i]}"
-            else
-                l_name_net_without_de="${l_name_net_without_de},${l_name[i]}"
-            fi
-        fi
-    done
-    
-    # return list of names without de
-    echo "${l_name_net_without_de}"
-}
 # ======================================================================== #
 # |                     *** END HELPER FUNCTIONS ***                     | #
 # ======================================================================== #
@@ -72,27 +51,23 @@ do
                    ;;
                 l_in_name_net)
                    l_in_name_net="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                   ;;
-                in_model_name)
-                    in_model_name="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;                
+                   ;;                
                 flag_training)
                    flag_training="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                    ;;
-               nbr_fold)
-                   nbr_fold="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
+               cv_nbr_fold)
+                   cv_nbr_fold="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                    ;;
                 seed)
                     seed="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
+                    
                 # small subset
                 in_nbr_reg)
                     in_nbr_reg="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
+                    
                 # default
-                in_coef)
-                    in_coef="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
                 p_in_model)
                     p_in_model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
@@ -109,22 +84,19 @@ do
                 flag_debug)
                     flag_debug="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
-                nbr_job)
-                    nbr_job="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
                 
                 # SLURM
                 flag_slurm)
                     flag_slurm="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
-                slurm_nbr_nodes)
-                  slurm_nbr_nodes="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                slurm_nodes)
+                  slurm_nodes="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
-                slurm_nbr_tasks)
-                  slurm_nbr_tasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                slurm_ntasks_per_node)
+                  slurm_ntasks_per_node="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
-                slurm_nbr_cpus)
-                  slurm_nbr_cpus="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                slurm_cpus_per_task)
+                  slurm_cpus_per_task="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
                 slurm_mem)
                   slurm_mem="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -141,18 +113,10 @@ do
                     p_singularity_bindpath="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                     ;;
                 
-                # regression
-                flag_intercept)
-                   flag_intercept="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                   ;;
-                                
-                # penalization
+                # penalization  # TRUE/FALSE
                 flag_penalize)
                    flag_penalize="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                    ;;
-                penalize_nbr_fold)
-                    penalize_nbr_fold="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
                     
             esac;;
         h)
@@ -172,7 +136,7 @@ mkdir -p ${p_out_dir}tmp_combine/network_construction/
 p_progress=${p_out_dir}tmp_combine/progress.txt
 p_reg=${p_out_dir}tmp_combine/reg.tsv
 p_target=${p_out_dir}tmp_combine/target.tsv
-p_net_binding=${p_out_dir}tmp_combine/net_binding.tsv
+p_net_binding="NONE"
 
 
 # ======================================================================== #
@@ -203,6 +167,7 @@ eval ${cmd_get_lists}
 # ------------------------------------------------------------------------ #
 if [ ${p_in_binding_event} != "NONE" ] 
 then
+    p_net_binding=${p_out_dir}tmp_combine/net_binding.tsv
     echo "- create binding networks from binding events.." >> ${p_progress}
     cmd_create_binding_net="${p_src_code}src/combine_networks/wrapper/create_binding_network.sh \
                               --p_in_binding_event ${p_in_binding_event} \
@@ -245,60 +210,69 @@ eval ${cmd_exclude_autoregulation}
 # |                       *** Combine networks ***                       | #
 # ------------------------------------------------------------------------ #
 echo "- combine networks with ${flag_training}" >> ${p_progress}
-# define command depending on the combination method: train with 10-CV, small subset, or not training at all
+# define command depending on the combination method: train with 10-CV, small subset of TFs, integration method, or not training at all
 if [ ${flag_training} == "ON-CV" ]; then
     cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_cv_folds.sh \
                            --p_in_binding_event ${p_in_binding_event} \
                            --p_in_net_binding ${p_out_dir}tmp_combine/network_construction/net_binding.tsv \
                            --l_in_name_net ${l_in_name_net} \
                            --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
-                           --in_model_name ${in_model_name} \
                            --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
-                           --flag_intercept ${flag_intercept} \
                            --flag_penalize ${flag_penalize} \
-                           --nbr_fold ${nbr_fold} \
-                           --penalize_nbr_fold ${penalize_nbr_fold} \
+                           --cv_nbr_fold ${cv_nbr_fold} \
                            --seed ${seed} \
                            --flag_slurm ${flag_slurm} \
-                           --slurm_nbr_tasks ${slurm_nbr_tasks} \
-                           --slurm_nbr_cpus ${slurm_nbr_cpus} \
-                           --slurm_nbr_nodes ${slurm_nbr_nodes} \
+                           --slurm_ntasks_per_node ${slurm_ntasks_per_node} \
+                           --slurm_cpus_per_task ${slurm_cpus_per_task} \
+                           --slurm_nodes ${slurm_nodes} \
                            --slurm_mem ${slurm_mem} \
                            --flag_singularity ${flag_singularity} \
                            --p_singularity_img ${p_singularity_img} \
                            --p_singularity_bindpath ${p_singularity_bindpath} \
                            --p_src_code ${p_src_code} \
                            --p_progress ${p_progress} \
-                           --flag_debug ${flag_debug} \
-                           --nbr_job ${nbr_job}"
-elif [ ${flag_training} == "ON-SUB" ]
-then
+                           --flag_debug ${flag_debug}"
+elif [ ${flag_training} == "ON-SUB" ]; then
     cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_on_small_subset.sh \
                           --p_in_binding_event ${p_in_binding_event} \
                           --p_in_net_binding ${p_out_dir}tmp_combine/network_construction/net_binding.tsv \
                           --l_in_name_net ${l_in_name_net} \
                           --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
                           --in_nbr_reg ${in_nbr_reg} \
-                          --in_model_name ${in_model_name} \
                           --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
-                          --flag_intercept ${flag_intercept} \
                           --flag_penalize ${flag_penalize} \
-                          --penalize_nbr_fold ${penalize_nbr_fold} \
                           --seed ${seed} \
                           --flag_slurm ${flag_slurm} \
-                          --slurm_nbr_tasks ${slurm_nbr_tasks} \
-                          --slurm_nbr_cpus ${slurm_nbr_cpus} \
+                          --slurm_ntasks_per_node ${slurm_ntasks_per_node} \
+                          --slurm_cpus_per_task ${slurm_cpus_per_task} \
                           --slurm_mem ${slurm_mem} \
                           --flag_singularity ${flag_singularity} \
                           --p_singularity_img ${p_singularity_img} \
                           --p_singularity_bindpath ${p_singularity_bindpath} \
                           --p_src_code ${p_src_code} \
                           --p_progress ${p_progress} \
-                          --flag_debug ${flag_debug} \
-                          --nbr_job ${nbr_job}"
+                          --flag_debug ${flag_debug}"
 
-elif [ ${flag_training} == "OFF" ]
-then
+elif [ ${flag_training} == "ON-INT" ]; then
+    cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_for_integration.sh \
+                          --p_in_binding_event ${p_in_binding_event} \
+                          --p_in_net_binding ${p_out_dir}tmp_combine/network_construction/net_binding.tsv \
+                          --l_in_name_net ${l_in_name_net} \
+                          --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
+                          --in_nbr_reg ${in_nbr_reg} \
+                          --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
+                          --seed ${seed} \
+                          --flag_slurm ${flag_slurm} \
+                          --slurm_ntasks ${slurm_ntasks_per_node} \
+                          --slurm_nbr_cpus ${slurm_cpus_per_task} \
+                          --slurm_mem ${slurm_mem} \
+                          --flag_singularity ${flag_singularity} \
+                          --p_singularity_img ${p_singularity_img} \
+                          --p_singularity_bindpath ${p_singularity_bindpath} \
+                          --p_src_code ${p_src_code} \
+                          --p_progress ${p_progress} \
+                          --flag_debug ${flag_debug}"
+elif [ ${flag_training} == "OFF" ]; then
     cmd_combine_networks="${p_src_code}src/combine_networks/wrapper/no_training_default_coefficients.sh \
                           --l_in_name_net ${l_in_name_net} \
                           --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
@@ -316,7 +290,7 @@ then
 fi 
 
 # run command
-if [ ${flag_debug} == "ON" ]; then printf "${cmd_combine_networks} for ${l_dir[i]}\n" >> ${p_progress}; fi
+if [ ${flag_debug} == "ON" ]; then echo "${cmd_combine_networks}" >> ${p_progress}; fi
 eval ${cmd_combine_networks}
 
 # copy network

@@ -2,6 +2,7 @@ generate_bart_net = function(p_in_expr_target
                              , p_in_expr_reg
                              , fname_bart
                              , p_out_dir
+                             , ntree
                              , flag_slurm
                              , seed
                              , p_src_code
@@ -9,9 +10,9 @@ generate_bart_net = function(p_in_expr_target
                             ){
     
     
-    # p_src_code='/scratch/mblab/dabid/netprophet/code_netprophet3.0/'
-    # p_in_expr_target='netprophet/net_debug/data/expr_target_indexed'
-    # p_in_expr_reg='netprophet/net_debug/data/expr_reg_indexed'
+    # p_src_code="/scratch/mblab/dabid/proj_net/code/NetProphet_3.0_new/"
+    # p_in_expr_target='/scratch/mblab/dabid/proj_net/code/NetProphet_3.0_new/toy_example/zev_expr_500_100_indexed'
+    # p_in_expr_reg='/scratch/mblab/dabid/proj_net/code/NetProphet_3.0_new/toy_example/zev_expr_reg_50_100_indexed'
     # fname_bart='net_bart.tsv'
     # p_out_dir='netprophet/net_debug/'
     # flag_slurm='ON'
@@ -53,6 +54,7 @@ generate_bart_net = function(p_in_expr_target
         df_bart_net = getBartNetwork(tgtLevel=t(as.matrix(df_expr_target))
                                      , tfLevel=t(as.matrix(df_expr_reg))
                                      , regMat=df_allowed
+                                     , ntree=ntree
                                      , mpiComm=1
                                      , blockSize=nbr_rmpi_slave
                                     )
@@ -85,14 +87,15 @@ if (sys.nframe() == 0){
     p_in_expr_reg = make_option(c("--p_in_expr_reg"), type="character", help="input - path of expression of regulators", default=NULL)
     fname_bart = make_option(c("--fname_bart"), type="character", default=NULL, help="output - path of generated bart network")
     p_out_dir = make_option(c("--p_out_dir"), type="character", default=NULL, help="output - path of output directory for results")
+    ntree = make_option(c("--ntree"), type="integer", help="number of trees for BART algo")
     flag_slurm = make_option(c("--flag_slurm"), type="character", default="OFF", help="ON or OFF for MPI run")
     seed = make_option(c("--seed"), type="integer", default=747, help="seed for reproducibility")
     p_src_code = make_option(c("--p_src_code"), type="character", default=NULL, help="path of the source code")
     nbr_rmpi_slave = make_option(c("--nbr_rmpi_slave"), type="integer", help="number Rmpi slaves for parallel/distributed computations")
-    opt_parser = OptionParser(option_list=list(p_in_expr_target, p_in_expr_reg, fname_bart, p_out_dir, flag_slurm, seed, p_src_code, nbr_rmpi_slave))
+    opt_parser = OptionParser(option_list=list(p_in_expr_target, p_in_expr_reg, fname_bart, p_out_dir, ntree, flag_slurm, seed, p_src_code, nbr_rmpi_slave))
     opt = parse_args(opt_parser)
     
-    if (is.null(opt$p_in_expr_target) || is.null(opt$p_in_expr_reg) || is.null(opt$fname_bart) || is.null(opt$p_out_dir) || is.null(opt$flag_slurm) || is.null(opt$p_src_code)
+    if (is.null(opt$p_in_expr_target) || is.null(opt$p_in_expr_reg) || is.null(opt$fname_bart) || is.null(opt$p_out_dir) || is.null(opt$flag_slurm) || is.null(opt$p_src_code) || is.null(opt$ntree)
        )
     {
         print_help(opt_parser)
@@ -107,6 +110,7 @@ if (sys.nframe() == 0){
                                   , p_in_expr_reg=opt$p_in_expr_reg
                                   , fname_bart=opt$fname_bart
                                   , p_out_dir=opt$p_out_dir
+                                  , ntree=opt$ntree
                                   , flag_slurm=opt$flag_slurm
                                   , seed=opt$seed
                                   , p_src_code=opt$p_src_code

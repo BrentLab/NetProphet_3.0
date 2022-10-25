@@ -8,6 +8,8 @@ def exclude_autoregulation_and_flatten_network(p_in_net_binding
     l_in_name_net=l_in_name_net.split(',') + ['binding']
     l_in_path_net=l_in_path_net.split(',') + [p_in_net_binding]
     for name_net, path_net in zip(l_in_name_net, l_in_path_net):
+        if path_net == 'NONE':
+            continue
         df_net = read_csv(path_net, header=0, index_col=0, sep='\t')
         
         # flatten network

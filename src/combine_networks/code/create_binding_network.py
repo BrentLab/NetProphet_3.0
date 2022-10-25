@@ -3,6 +3,11 @@ def create_binding_network(p_in_binding_event
                            , p_in_target
                            , p_out_net_binding
                           ):
+    """
+    create a binding network: a matrix regulators X targets. This network includes all regulators
+    in the network even if they do not exist in the file p_in_binding_event file
+    p_in_binding_event: a file for positive binding event | REGULATOR | TARGET |
+    """
     from pandas import DataFrame, read_csv
     import numpy as np
     

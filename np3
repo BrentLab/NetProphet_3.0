@@ -20,6 +20,9 @@ cat << EOF
     --flag_microarray             : "MICROARRAY" for microarray expression data, "RNA-SEQ" for RNA-Seq data
     --lasso_nbr_fold              : number of folds used for estimating lambda in lasso (optional, default 10)
         
+    BART arguments:
+    --bart_ntree                  : number of trees for BART algorithms (default 50)
+    
     PWM arguments:
     --p_in_promoter               : path of promoter fasta sequences for building PWM networks 
     
@@ -27,13 +30,13 @@ cat << EOF
     --l_in_name_net               : a string of name of networks: "lasso,de,bart,pwm"
     --l_in_path_net               : a string of path of networks: "${path_lasso},${path_de},${path_bart},${path_pwm}" 
     --flag_penalize               : "ON" or "L1", "L2", or "L1_L2" or "XGBOOST-OPTIMIZE" (optional, default is "OFF")
-    --flag_training               : "ON-CV", or "ON-SUB" or "OFF" (optional, default is "OFF")
+    --flag_training               : "ON-CV", "ON-SUB", "ON-INT", or "OFF" for 10-CV, training with specific number of TFs, training for integration, or using an already trained model (optional, default is "OFF")
     combine method: default coef  :
     --p_in_model                  : path of pre-built model, goes with flag_training="OFF"
     combine method: small subset  :
     --in_nbr_reg                  : number of regulators (TFs) for training, goes flag_training="ON-SUB"
     combine method: 10cv          :
-    --combine_nbr_fold            : number of cross-validation default 10, goes with flag_training="ON-CV"
+    --combine_cv_nbr_fold            : number of cross-validation default 10, goes with flag_training="ON-CV"
     
     OUTPUT arguments:
     --p_out_dir                   : path of output directory
@@ -80,11 +83,13 @@ flag_global_shrinkage="OFF"
 flag_microarray="MICROARRAY"
 lasso_nbr_fold=10
 lasso_slurm_nodes=1
-lasso_slurm_mem=50G
+lasso_slurm_mem=10G
 
 # BART
 bart_slurm_nodes=1
 bart_slurm_ntasks=15
+bart_slurm_mem=20G
+bart_ntree=50
 
 # COMBINATION arguments
 p_in_binding_event="NONE"
@@ -92,21 +97,21 @@ l_in_name_net=""
 l_in_path_net=""
 in_model_name="atomic"
 
-# COMBINATION 10CV
-combine_nbr_fold=10
+# COMBINATION 10CVx
+combine_cv_nbr_fold=10
 
 # COMBINATION SMALL SUBSET
 in_nbr_reg="NONE"
 
 # COMBINATION PRE-BUILT MODEL
 flag_training="OFF"
-flag_penalize="OFF"
+flag_penalize="XGBOOST-OPTIMIZE"
 in_coef="NONE"
 p_in_model="NONE"
 
 # COMBINATION SLURM
-combine_slurm_mem=50G
-combine_slurm_nodes=11
+combine_slurm_mem=20G
+combine_slurm_nodes=3
 combine_slurm_ntasks_per_node=1
 combine_slurm_cpus_per_task=2
 
@@ -118,7 +123,6 @@ penalize_nbr_fold=10
 p_src_code="$(cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd)/"
 p_progress="NONE"
 flag_debug="OFF"
-nbr_job=2
 seed=747
 
 # SLURM arguments
@@ -219,7 +223,13 @@ do
                 bart_slurm_ntasks)
                     bart_slurm_ntasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                     ;;
-                
+                bart_slurm_mem)
+                    bart_slurm_mem="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    ;;
+                bart_ntree)
+                    bart_ntree="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    ;;
+                    
                 # PWM
                 p_in_promoter)
                   p_in_promoter="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -244,8 +254,8 @@ do
                 flag_training)
                   flag_training="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
-                combine_nbr_fold)
-                  combine_nbr_fold="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                combine_cv_nbr_fold)
+                  combine_cv_nbr_fold="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
                 in_model_name)
                   in_model_name="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -287,9 +297,6 @@ do
                   ;;
                 flag_debug)
                   flag_debug="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                  ;;
-                nbr_job)
-                  nbr_job="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
                 
                 # SLURM
@@ -393,20 +400,20 @@ then
                        --ntasks=${bart_slurm_ntasks} \
                        --nodes=1-${bart_slurm_nodes} \
                        -D ${p_out_dir_logs}tmp/ \
-                       --mem=40GB "
+                       --mem=${bart_slurm_mem} "
     fi
     cmd_run_bart+="${p_src_code}src/build_bart/wrapper/build_net_bart.sh \
                   ${p_in_expr_target} \
                   ${p_in_expr_reg} \
                   ${p_out_dir} \
                   net_bart.tsv \
+                  ${bart_ntree} \
                   ${flag_slurm} \
                   ${p_src_code} \
                   ${flag_singularity} \
                   ${p_singularity_img} \
                   ${p_singularity_bindpath} \
                   ${bart_slurm_ntasks}"
-    
     echo "run BART.."
     job_id_bart=$(echo $(eval ${cmd_run_bart}) | awk '{split($0, a, " "); print a[4]}')
     l_in_name_net+=",bart"
@@ -422,7 +429,6 @@ fi
 job_id_pwm=1
 if [ ${flag_run_pwm} == "ON" ] || [ ${flag_run_all} == "ON" ]
 then
-    nbr_job_pwm=${nbr_job}
     if [ ${flag_slurm} == "ON" ]; then
         mkdir -p ${p_out_dir_logs}tmp/
         nbr_job_pwm=25
@@ -482,29 +488,24 @@ then
                       --p_in_binding_event ${p_in_binding_event} \
                       --l_in_name_net ${l_in_name_net} \
                       --l_in_path_net ${l_in_path_net} \
-                      --in_model_name ${in_model_name} \
                       --in_nbr_reg ${in_nbr_reg} \
-                      --in_coef ${in_coef} \
                       --p_in_model ${p_in_model} \
-                      --nbr_job ${nbr_job} \
                       --seed ${seed} \
-                      --flag_intercept ${flag_intercept} \
                       --flag_penalize ${flag_penalize} \
-                      --penalize_nbr_fold ${penalize_nbr_fold} \
                       --flag_training ${flag_training} \
-                      --nbr_fold ${combine_nbr_fold} \
+                      --cv_nbr_fold ${combine_cv_nbr_fold} \
                       --p_out_dir ${p_out_dir} \
                       --p_src_code ${p_src_code} \
                       --flag_debug ${flag_debug} \
                       --flag_slurm ${flag_slurm} \
-                      --slurm_nbr_tasks ${combine_slurm_ntasks_per_node} \
-                      --slurm_nbr_cpus ${combine_slurm_cpus_per_task} \
-                      --slurm_nbr_nodes ${combine_slurm_nodes} \
+                      --slurm_ntasks_per_node ${combine_slurm_ntasks_per_node} \
+                      --slurm_cpus_per_task ${combine_slurm_cpus_per_task} \
+                      --slurm_nodes ${combine_slurm_nodes} \
                       --slurm_mem ${combine_slurm_mem} \
                       --flag_singularity ${flag_singularity} \
                       --p_singularity_img ${p_singularity_img} \
                       --p_singularity_bindpath ${p_singularity_bindpath}"
      
-    echo "run COMBINE.."                 
+    echo "run COMBINE.."  
     job_id_combine=$(echo $(eval ${cmd_run_combine}) | awk '{split($0, a, " "); print a[4]}')
 fi
