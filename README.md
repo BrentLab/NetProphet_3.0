@@ -20,12 +20,12 @@ Refer to this wiki [page](https://github.com/BrentLab/NetProphet_3.0/wiki/Advanc
 
 
 # II. Run NetProphet 3.0
-Clone NetProphet3.0 in your home directory or any other path in your computer
+Clone NetProphet3.0 in a path in your computer and let's call that path ${p_src_code}
 
 ## With a toy example
-This NetProphet3.0 command assumes that singularity container will be used. If not, have ``` --flag_singularity OFF ```.  
+This NetProphet3.0 command assumes that singularity container will be used and that's why ``` --flag_singularity ON ```.  
 ```
-code_path=/path/of/NetProphet_3.0/
+p_src_code=/path/of/NetProphet_3.0/
 p_out_dir=/path/of/output/directory/
 p_singularity_img=/path/of/singularity/container/
 p_singularity_bindpath=/path/of/link/path  # see below section for more info
