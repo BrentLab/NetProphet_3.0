@@ -1,26 +1,19 @@
 #!/bin/bash
 
 p_wd=/scratch/mblab/dabid/proj_net/
-code_path=${p_wd}code/NetProphet_3.0_new/
-p_out_dir=${p_wd}code/NetProphet_3.0_new/toy_example/res_s_np3/
-p_singularity_img=${code_path}/singularity/s_np3
-p_singularity_bindpath=${code_path}  # see below section for more info
+p_src_code=${p_wd}code/NetProphet_3.0/
+p_out_dir=${p_wd}code/NetProphet_3.0/toy_example/res/
 
-${code_path}np3 -m \
-    --p_in_binding_event ${code_path}toy_example/binding_reg_target.tsv \
-    --flag_global_shrinkage ON \
-    --l_in_name_net "lasso,bart" \
-    --l_in_path_net "${p_out_dir}net_lasso.tsv,${p_out_dir}net_bart.tsv" \
-    --p_in_expr_target ${code_path}toy_example/zev_expr_500_100_indexed \
-    --p_in_expr_reg ${code_path}toy_example/zev_expr_reg_50_100_indexed \
-    --p_in_promoter ${code_path}toy_example/promoter.scer.fasta \
-    --p_in_net_bart ${p_out_dir}net_bart.tsv \
-    --flag_training ON-INT \
-    --p_out_dir ${p_out_dir} \
+${p_src_code}np3 -c \
+    --p_in_binding_event ${p_src_code}toy_example/data_binding_reg_target.tsv \
+    --l_in_name_net "lasso,de,bart,pwm" \
+    --l_in_path_net "${p_out_dir}features/net_lasso.tsv,${p_src_code}toy_example/data_zev_de_shrunken_50_500_indexed,${p_out_dir}features/net_bart.tsv,${p_out_dir}features/net_pwm.tsv" \
+    --flag_training ON-CV \
+    --combine_cv_nbr_fold 10 \
+    --p_out_dir ${p_out_dir}10cv_with_singularity/ \
     --flag_singularity ON \
-    --p_singularity_img ${p_singularity_img} \
-    --p_singularity_bindpath ${p_singularity_bindpath} \
+    --p_singularity_img ${p_src_code}singularity/s_np3.sif \
+    --p_singularity_bindpath ${p_src_code} \
     --flag_slurm ON \
     --p_out_dir_logs ${p_out_dir}log/ \
-    --data toy_example \
-    --in_nbr_reg 1
+    --data toy_example_10cv \

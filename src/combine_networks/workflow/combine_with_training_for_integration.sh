@@ -47,6 +47,9 @@ do
                 in_nbr_reg)
                     in_nbr_reg="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                     ;;
+                flag_penalize)
+                    flag_penalize="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                    ;;
                     
                 # Output
                 p_out_dir)
@@ -136,39 +139,40 @@ eval ${cmd_split_networks}
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ #
 # 1. UNSUPPORTED: Predict scores for edges of TFs that do not have labels (binding events)
 # Train on all data, use that model for prediction for these unsupported edges
-# if [ -d ${p_out_dir}unsupported ]
-# then
-#     echo "- train/test unsupported edges by training all data.." >> ${p_progress}
-#     # create necessary directories
-#     mkdir -p ${p_out_dir}unsupported/predictions/
+if [ -d ${p_out_dir}unsupported ]
+then
+    echo "- train/test unsupported edges by training all data.." >> ${p_progress}
+    # create necessary directories for output
+    mkdir -p ${p_out_dir}unsupported/predictions/
     
-#     # Train using all data & Predict for unsupported edges
-#     cmd_train_test_unsupported=""
-# #     if [ ${flag_slurm} == "ON" ]; then 
-# #         cmd_train_test_unsupported+="srun --exclusive --nodes 1 --ntasks 1 --cpus-per-task ${slurm_nbr_cpus} --mem ${slurm_mem} "
-# #     fi
+    # Train using all data & Predict for unsupported edges
+    cmd_train_test_unsupported=""
+    # if [ ${flag_slurm} == "ON" ]; then 
+    #     cmd_train_test_unsupported+="srun --exclusive --nodes 1 --ntasks 1 --cpus-per-task ${slurm_nbr_cpus} --mem ${slurm_mem} "
+    # fi
     
-#     cmd_train_test_unsupported+=" ${p_src_code}src/combine_networks/wrapper/train_test.sh \
-#         --p_in_binding_train ${p_out_dir}supported/net_binding.tsv \
-#         --l_in_path_net_train $(create_paths ${l_in_name_net} net ${p_out_dir}supported/) \
-#         --l_in_path_net_test $(create_paths ${l_in_name_net} net ${p_out_dir}unsupported/) \
-#         --l_in_name_net ${l_in_name_net} \
-#         --p_out_pred_train ${p_out_dir}unsupported/predictions/pred_train.tsv \
-#         --p_out_pred_test ${p_out_dir}unsupported/predictions/pred_test.tsv \
-#         --p_out_model_summary ${p_out_dir}unsupported/predictions/model_summary \
-#         --p_out_model ${p_out_dir}unsupported/predictions/model.RData \
-#         --p_src_code ${p_src_code} \
-#         --flag_debug ${flag_debug} \
-#         --p_progress ${p_progress} \
-#         --flag_slurm ${flag_slurm} \
-#         --slurm_ntasks_per_node ${slurm_ntasks} \
-#         --flag_singularity ${flag_singularity} \
-#         --p_singularity_img ${p_singularity_img} \
-#         --p_singularity_bindpath ${p_singularity_bindpath}"
+    cmd_train_test_unsupported+=" ${p_src_code}src/combine_networks/wrapper/train_test.sh \
+        --p_in_binding_train ${p_out_dir}supported/net_binding.tsv \
+        --l_in_path_net_train $(create_paths ${l_in_name_net} net ${p_out_dir}supported/) \
+        --l_in_path_net_test $(create_paths ${l_in_name_net} net ${p_out_dir}unsupported/) \
+        --flag_penalize ${flag_penalize} \
+        --l_in_name_net ${l_in_name_net} \
+        --p_out_pred_train ${p_out_dir}unsupported/predictions/pred_train.tsv \
+        --p_out_pred_test ${p_out_dir}unsupported/predictions/pred_test.tsv \
+        --p_out_model_summary ${p_out_dir}unsupported/predictions/model_summary \
+        --p_out_model ${p_out_dir}unsupported/predictions/model.RData \
+        --p_src_code ${p_src_code} \
+        --flag_debug ${flag_debug} \
+        --p_progress ${p_progress} \
+        --flag_slurm ${flag_slurm} \
+        --slurm_ntasks_per_node ${slurm_ntasks} \
+        --flag_singularity ${flag_singularity} \
+        --p_singularity_img ${p_singularity_img} \
+        --p_singularity_bindpath ${p_singularity_bindpath}"
 
-#     if [ ${flag_debug} == "ON" ]; then printf "${cmd_train_test_unsupported}\n" >> ${p_progress}; fi
-#     eval ${cmd_train_test_unsupported}
-# fi
+    if [ ${flag_debug} == "ON" ]; then printf "${cmd_train_test_unsupported}\n" >> ${p_progress}; fi
+    eval ${cmd_train_test_unsupported}
+fi
 
 # 2. SUPPORTED: Predict scores for edges that have labels (binding events)
 # Train on the specific number of regulators ${in_nbr_reg}, then the trained model is used 
@@ -180,10 +184,10 @@ then
     mkdir -p ${p_out_dir}supported/predictions/
     # Train/Integrate for every TF
     cmd_train_integrate_supported=""
-#     if [ ${flag_slurm} == "ON" ]
-#     then
-#         cmd_train_integrate_supported+="srun --exclusive --nodes 1 --ntasks 1 --cpus-per-task ${slurm_nbr_cpus} --mem ${slurm_mem} "
-#     fi
+    # if [ ${flag_slurm} == "ON" ]
+    # then
+    #     cmd_train_integrate_supported+="srun --exclusive --nodes 1 --ntasks 1 --cpus-per-task ${slurm_nbr_cpus} --mem ${slurm_mem} "
+    # fi
     
        cmd_train_integrate_supported+="${p_src_code}src/combine_networks/wrapper/train_integrate.sh \
                                         --p_in_binding ${p_out_dir}supported/net_binding.tsv \

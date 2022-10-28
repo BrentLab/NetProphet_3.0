@@ -257,6 +257,7 @@ elif [ ${flag_training} == "ON-INT" ]; then
     cmd_combine_networks="${p_src_code}src/combine_networks/workflow/combine_with_training_for_integration.sh \
                           --p_in_binding_event ${p_in_binding_event} \
                           --p_in_net_binding ${p_out_dir}tmp_combine/network_construction/net_binding.tsv \
+                          --flag_penalize ${flag_penalize} \
                           --l_in_name_net ${l_in_name_net} \
                           --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
                           --in_nbr_reg ${in_nbr_reg} \
@@ -276,7 +277,6 @@ elif [ ${flag_training} == "OFF" ]; then
     cmd_combine_networks="${p_src_code}src/combine_networks/wrapper/no_training_default_coefficients.sh \
                           --l_in_name_net ${l_in_name_net} \
                           --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}tmp_combine/network_construction/) \
-                          --in_model_name ${in_model_name} \
                           --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
                           --flag_slurm ${flag_slurm} \
                           --flag_singularity ${flag_singularity} \
@@ -285,7 +285,6 @@ elif [ ${flag_training} == "OFF" ]; then
                           --p_src_code ${p_src_code} \
                           --p_progress ${p_progress} \
                           --flag_debug ${flag_debug} \
-                          --in_coef ${in_coef} \
                           --p_in_model ${p_in_model}"
 fi 
 

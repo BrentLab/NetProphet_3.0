@@ -706,7 +706,7 @@ if (sys.nframe() == 0){
         , flag_intercept = make_option(c("--flag_intercept"), type="character", help="ON or OFF for intercept generation")
         
         # penalization
-        , flag_penalize = make_option(c("--flag_penalize"), type="character", default="XGBOOST-OPTIMIZE", help="ON or OFF for penalization/regularization")
+        , flag_penalize = make_option(c("--flag_penalize"), type="character", default="XGBOOST-OPTIMIZE", help="string for penalization/regularization")
         , p_dir_penalize = make_option(c("--p_dir_penalize"), type="character", help="path of directory for penalization intermediate files")
         , penalize_nbr_fold = make_option(c("--penalize_nbr_fold"), type="integer", help="number of CV folds for penalization/regularization")                                      
     ))

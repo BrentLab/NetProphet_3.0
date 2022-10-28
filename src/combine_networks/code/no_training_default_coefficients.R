@@ -42,7 +42,7 @@ if (sys.nframe() == 0){
         #Input
         l_in_name_net = make_option(c("--l_in_name_net"), type="character", help="list of name of networks separated by comma")
         , l_in_path_net = make_option(c("--l_in_path_net"), type="character", help="list of path of networks separated by comma")
-        , in_model_name = make_option(c("--in_model_name"), type="character", help="model for combination")
+        , in_model_name = make_option(c("--in_model_name"), default="atomic", type="character", help="model for combination")
         , in_coef = make_option(c("--in_coef"), type="character", default="NONE", help="a string coding list of coefficients encoded in a string: c(1,3,..) ")
         , p_in_model = make_option(c("--p_in_model"), type="character", default="NONE", help="path of model (R object)")
         

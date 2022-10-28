@@ -12,12 +12,6 @@ do
                 l_in_path_net)
                     l_in_path_net="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
-                in_model_name)
-                    in_model_name="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
-                in_coef)
-                    in_coef="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
-                    ;;
                 p_in_model)
                     p_in_model="${!OPTIND}"; OPTIND=$(( ${OPTIND} + 1 ))
                     ;;
@@ -77,8 +71,6 @@ fi
 cmd+="Rscript ${p_src_code}src/combine_networks/code/no_training_default_coefficients.R \
         --l_in_name_net ${l_in_name_net} \
         --l_in_path_net ${l_in_path_net} \
-        --in_model_name ${in_model_name} \
-        --in_coef ${in_coef} \
         --p_in_model ${p_in_model} \
         --p_out_net_np3 ${p_out_dir}net_np3.tsv \
         --p_src_code ${p_src_code}"
