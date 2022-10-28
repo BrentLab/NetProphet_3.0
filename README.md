@@ -8,11 +8,11 @@ NetProphet3.0 is network inference package, first it generates different network
 - Refer to Singularity [website](https://singularity.hpcng.org/user-docs/3.6/quick_start.html#quick-installation-steps) and install singularity >=3.5.2
 - load s_np container from sylab cloud with this command
    ``` 
-   singularity pull library://dabid/default/s_np:sha256.2c48c295ab321b5fc6c79132934aef7f5a317beb46698ad879fd45bb2440c344 
+   singularity pull library://dabid/default/s_np3:sha256.e14c3a078c052932b5e2a840beea1fa5b8798db5668e196d8e297b223b6390d3
    ```
 - rename the container with a shorted file name, so it is easier to use. 
    ``` 
-   mv s_np_sha256.2c48c295ab321b5fc6c79132934aef7f5a317beb46698ad879fd45bb2440c344.sif s_np 
+   mv s_np3_sha256.e14c3a078c052932b5e2a840beea1fa5b8798db5668e196d8e297b223b6390d3.sif s_np3.sif
    ```
 
 ## More advanced, install all dependencies
@@ -20,26 +20,26 @@ Refer to this wiki [page](https://github.com/BrentLab/NetProphet_3.0/wiki/Advanc
 
 
 # II. Run NetProphet 3.0
-Clone NetProphet3.0 in your home directory or any other path in your computer
+Clone NetProphet3.0 in a path in your computer and let's call that path ${p_src_code}
 
 ## With a toy example
-This NetProphet3.0 command assumes that singularity container will be used. If not, have ``` --flag_singularity OFF ```.  
+This NetProphet3.0 command assumes that singularity container will be used and that's why ``` --flag_singularity ON ```.  
 ```
-code_path=/path/of/NetProphet_3.0/
-p_out_dir=/path/of/output/directory/
-p_singularity_img=/path/of/singularity/container/
-p_singularity_bindpath=/path/of/link/path  # see below section for more info
+p_wd=/scratch/mblab/dabid/proj_net/
+p_src_code=${p_wd}code/NetProphet_3.0/
+p_out_dir=${p_wd}code/NetProphet_3.0/toy_example/res/
 
-${code_path}np3 -a \
-    --p_in_expr_target ${code_path}toy_example/zev_expr_500_100_indexed \
-    --p_in_expr_reg ${code_path}toy_example/zev_expr_reg_50_100_indexed \
-    --p_in_promoter ${code_path}toy_example/promoter.scer.fasta \
-    --flag_training OFF \
-    --p_in_model ${code_path}model/kem_model.RData \
-    --p_out_dir ${p_out_dir} \
-    --flag_singularity ON \
-    --p_singularity_img ${p_singularity_img} \
-    --p_singularity_bindpath ${p_singularity_bindpath} \
+${p_src_code}np3 -c \
+    --p_in_binding_event ${p_src_code}toy_example/data_binding_reg_target.tsv \
+    --l_in_name_net "lasso,de,bart,pwm" \
+    --l_in_path_net "${p_out_dir}features/net_lasso.tsv,${p_src_code}toy_example/data_zev_de_shrunken_50_500_indexed,${p_out_dir}features/net_bart.tsv,${p_out_dir}features/net_pwm.tsv" \
+    --flag_training ON-CV \
+    --combine_cv_nbr_fold 10 \
+    --p_out_dir ${p_out_dir}10cv/ \
+    --flag_singularity OFF \
+    --flag_slurm ON \
+    --p_out_dir_logs ${p_out_dir}log/ \
+    --data toy_example_10cv \
 ```
 ## More about np3 command and options
 - Usage: 
@@ -49,10 +49,9 @@ ${code_path}np3 -a \
 - [NetProphet3.0 with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
 - [NetProphet3.0 with Singularity](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-Singularity)
 - NetProphet3.0 combination method
-    - Train with 10CV
-    - Train with a subset of TFs
-    - Train for integration
-    - No Training, use a pre-built model (yeast)
+    - [Train with 10CV](https://github.com/BrentLab/NetProphet_3.0/wiki/10cv)
+    - [Train for integration](https://github.com/BrentLab/NetProphet_3.0/wiki/integration)
+    - [No Training, use a pre-built model (yeast)](https://github.com/BrentLab/NetProphet_3.0/wiki/yeast_model)
 - NetProphet3.0 other modules
     - [LASSO](https://github.com/BrentLab/NetProphet_3.0/wiki/LASSO)
     - [BART](https://github.com/BrentLab/NetProphet_3.0/wiki/BART)
