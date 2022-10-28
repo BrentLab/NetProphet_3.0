@@ -49,7 +49,7 @@ ${p_src_code}np3 -c \
 - [NetProphet3.0 with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
 - [NetProphet3.0 with Singularity](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-Singularity)
 - NetProphet3.0 combination method
-    - [Train with 10CV](https://github.com/BrentLab/NetProphet_3.0/wiki/10cv)
+    - [Train for 10CV](https://github.com/BrentLab/NetProphet_3.0/wiki/10cv)
     - [Train for integration](https://github.com/BrentLab/NetProphet_3.0/wiki/integration)
     - [No Training, use a pre-built model (yeast)](https://github.com/BrentLab/NetProphet_3.0/wiki/yeast_model)
 - NetProphet3.0 other modules
