@@ -1,5 +1,5 @@
 # NetProphet 3.0
-NetProphet3.0 is a package for inference of TF network maps: as a first step, it generates intermediate networks by regression and other motif algorithms LASSO, DE, BART, PWM. Then, it combines these intermediate networks into one final network. The easiest way to run NetProphet3 is with the **singularity container**, linked below. Steps are easy: first install the singularity software, then pull the container as instructed below. 
+NetProphet3.0 is a package for network inference: first, it generates intermediate networks by regression and other algorithms LASSO, DE, BART, PWM. Then, it combines them into one final network using XGboost, a supervised ML. The easiest way to run NetProphet3 is with the **singularity container**, as demonstrated below. Steps are easy: first install the singularity software, then pull the container, you will be ready to run NetProphet3. 
 
 # I. Install NetProphet 3.0
 
