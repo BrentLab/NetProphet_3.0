@@ -1,5 +1,5 @@
 # NetProphet 3.0
-NetProphet3.0 is network inference package, first it generates different networks by regression algorithms (LASSO and BART), and other algorithms (PWM). Then, it combines these networks in one final network. The easiest way to run NetProphet3 is with **singularity container**. After installing singularity, you load the container below and start running NetProphet3.0. The more advanced way is by installing all dependencies of NetProphet 3.0.
+NetProphet3.0 is a package for inference of TF network maps: as a first step, it generates intermediate networks by regression and other motif algorithms LASSO, DE, BART, PWM. Then, it combines these intermediate networks into one final network. The easiest way to run NetProphet3 is with the **singularity container**, linked below. Steps are easy: first install the singularity software, then pull the container as instructed below. 
 
 # I. Install NetProphet 3.0
 
@@ -15,7 +15,7 @@ NetProphet3.0 is network inference package, first it generates different network
    mv s_np3_sha256.e14c3a078c052932b5e2a840beea1fa5b8798db5668e196d8e297b223b6390d3.sif s_np3.sif
    ```
 
-## More advanced, install all dependencies
+## More advanced, all dependencies have to be installed
 Refer to this wiki [page](https://github.com/BrentLab/NetProphet_3.0/wiki/Advanced-Installation) for installing NetProphet dependencies
 
 
