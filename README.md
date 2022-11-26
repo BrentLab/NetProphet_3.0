@@ -49,7 +49,7 @@ ${p_src_code}np3 -c \
     - [Train for 10CV](https://github.com/BrentLab/NetProphet_3.0/wiki/10cv)
     - [Train for integration](https://github.com/BrentLab/NetProphet_3.0/wiki/integration)
     - [No Training, use a pre-built model (yeast)](https://github.com/BrentLab/NetProphet_3.0/wiki/prebuilt_yeast_model)
-- NetProphet3.0: regression and motif modules
+- NetProphet3.0: construction of intermediate networks
     - [LASSO](https://github.com/BrentLab/NetProphet_3.0/wiki/LASSO)
     - [BART](https://github.com/BrentLab/NetProphet_3.0/wiki/BART)
     - [PWM](https://github.com/BrentLab/NetProphet_3.0/wiki/PWM) 
