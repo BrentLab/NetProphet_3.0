@@ -12,4 +12,6 @@ ${p_src_code}np3 -b \
     --flag_singularity OFF \
     --flag_slurm ON \
     --p_out_dir_logs ${p_out_dir}log/ \
-    --data toy_example
+    --data toy_example \
+    --bart_slurm_nodes 20 \
+    --bart_slurm_ntasks 60

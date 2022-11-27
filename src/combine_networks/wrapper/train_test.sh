@@ -61,9 +61,6 @@ do
             flag_slurm)
                 flag_slurm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                 ;;
-            slurm_ntasks_per_node)
-                slurm_ntasks_per_node="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                ;;
                 
             # logistics
             p_src_code)
@@ -105,7 +102,6 @@ cmd+="Rscript ${p_src_code}src/combine_networks/code/train_test.R \
              --p_out_model_summary ${p_out_model_summary} \
              --p_out_model ${p_out_model} \
              --p_src_code ${p_src_code} \
-             --nbr_cores ${slurm_ntasks_per_node} \
              --flag_penalize ${flag_penalize}"
              
 # ======================================================== #

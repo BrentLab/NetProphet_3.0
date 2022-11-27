@@ -7,6 +7,17 @@
 # ================================================================ # 
 library(lars) #, lib="/home/dabid/R/x86_64-unknown-linux-gnu-library/3.2/")
 
+.Last <- function(){
+       if (is.loaded("mpi_initialize")){
+           if (mpi.comm.size(1) > 0){
+               print("Please use mpi.close.Rslaves() to close slaves.")
+               mpi.close.Rslaves()
+           }
+           print("Please use mpi.quit() to quit R")
+           .Call("mpi_finalize")
+       }
+}
+
 
 # ================================================================ #
 # |                **** Helper functions ****                    | #
@@ -342,7 +353,8 @@ create_lasso_global_shrinkage_parallel = function(df_expr_target
                                                  , nbr_cv_fold
                                                  , p_src_code){
   library("Rmpi")
-  mpi.spawn.Rslaves(nslaves = nbr_cv_fold)
+  ns <- mpi.universe.size() - 1
+  mpi.spawn.Rslaves(nslaves = ns)
   mpi.bcast.Robj2slave(df_expr_target)
   mpi.bcast.Robj2slave(df_expr_reg)
   mpi.bcast.Robj2slave(df_prior)
@@ -358,8 +370,8 @@ create_lasso_global_shrinkage_parallel = function(df_expr_target
   df_lasso_net = lars.multi.optimize.parallel(df_expr_target,df_expr_reg,df_perturbed,df_prior,df_allowed)[[1]]
   
   
-  mpi.close.Rslaves()
-  
+  mpi.close.Rslaves(dellog = FALSE)
+  mpi.quit()
   df_lasso_net
 }
 

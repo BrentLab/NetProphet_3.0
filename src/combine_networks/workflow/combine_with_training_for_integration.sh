@@ -71,14 +71,8 @@ do
                 flag_slurm)
                     flag_slurm="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                     ;;
-                slurm_nbr_nodes)
-                  slurm_nbr_nodes="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                  ;;
                 slurm_ntasks)
                   slurm_ntasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                  ;;
-                slurm_nbr_cpus)
-                  slurm_nbr_cpus="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
                 slurm_mem)
                   slurm_mem="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
@@ -146,12 +140,7 @@ then
     mkdir -p ${p_out_dir}unsupported/predictions/
     
     # Train using all data & Predict for unsupported edges
-    cmd_train_test_unsupported=""
-    # if [ ${flag_slurm} == "ON" ]; then 
-    #     cmd_train_test_unsupported+="srun --exclusive --nodes 1 --ntasks 1 --cpus-per-task ${slurm_nbr_cpus} --mem ${slurm_mem} "
-    # fi
-    
-    cmd_train_test_unsupported+=" ${p_src_code}src/combine_networks/wrapper/train_test.sh \
+    cmd_train_test_unsupported=" ${p_src_code}src/combine_networks/wrapper/train_test.sh \
         --p_in_binding_train ${p_out_dir}supported/net_binding.tsv \
         --l_in_path_net_train $(create_paths ${l_in_name_net} net ${p_out_dir}supported/) \
         --l_in_path_net_test $(create_paths ${l_in_name_net} net ${p_out_dir}unsupported/) \
@@ -165,7 +154,6 @@ then
         --flag_debug ${flag_debug} \
         --p_progress ${p_progress} \
         --flag_slurm ${flag_slurm} \
-        --slurm_ntasks_per_node ${slurm_ntasks} \
         --flag_singularity ${flag_singularity} \
         --p_singularity_img ${p_singularity_img} \
         --p_singularity_bindpath ${p_singularity_bindpath}"
@@ -183,13 +171,7 @@ then
     # create necessary directories
     mkdir -p ${p_out_dir}supported/predictions/
     # Train/Integrate for every TF
-    cmd_train_integrate_supported=""
-    # if [ ${flag_slurm} == "ON" ]
-    # then
-    #     cmd_train_integrate_supported+="srun --exclusive --nodes 1 --ntasks 1 --cpus-per-task ${slurm_nbr_cpus} --mem ${slurm_mem} "
-    # fi
-    
-       cmd_train_integrate_supported+="${p_src_code}src/combine_networks/wrapper/train_integrate.sh \
+    cmd_train_integrate_supported="${p_src_code}src/combine_networks/wrapper/train_integrate.sh \
                                         --p_in_binding ${p_out_dir}supported/net_binding.tsv \
                                         --l_in_name_net ${l_in_name_net} \
                                         --l_in_path_net $(create_paths ${l_in_name_net} net ${p_out_dir}supported/) \
@@ -205,8 +187,8 @@ then
                                         --flag_slurm ${flag_slurm} \
                                         --slurm_ntasks ${slurm_ntasks}"
     # run the command
-        if [ ${flag_debug} == "ON" ]; then printf "${cmd_train_integrate_supported}\n" >> ${p_progress}; fi
-        eval ${cmd_train_integrate_supported}
+    if [ ${flag_debug} == "ON" ]; then printf "${cmd_train_integrate_supported}\n" >> ${p_progress}; fi
+    eval ${cmd_train_integrate_supported}
     
 fi
 

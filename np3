@@ -110,10 +110,11 @@ in_coef="NONE"
 p_in_model="NONE"
 
 # COMBINATION SLURM
-combine_slurm_mem=50G
+combine_slurm_mem=20G
 combine_slurm_nodes=3
 combine_slurm_ntasks_per_node=2
 combine_slurm_cpus_per_task=2
+combine_slurm_ntasks=5
 
 # COMBINATION WITH REGRESSION
 flag_intercept="ON"
@@ -281,6 +282,9 @@ do
                 combine_slurm_ntasks_per_node)
                   combine_slurm_ntasks_per_node="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
+                combine_slurm_ntasks)
+                  combine_slurm_ntasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
                 combine_slurm_cpus_per_task)
                   combine_slurm_cpus_per_task="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
@@ -353,7 +357,7 @@ then
                        --mail-type=${mail_type} \
                        --mail-user=${mail_user} \
                        -D ${p_out_dir_logs}tmp/ \
-                       -n 10 \
+                       -n 11 \
                        --nodes=1-${lasso_slurm_nodes} \
                        --mem=${lasso_slurm_mem} \
                        --cpus-per-task=2 "
@@ -470,19 +474,28 @@ job_id_combine=1
 if [ ${flag_run_combine} == "ON" ] || [ ${flag_run_all} == "ON" ]
 then
     cmd_run_combine=""
-    if [ ${flag_slurm} == "ON" ]; then
+    if [ ${flag_slurm} == "ON" ];then
         mkdir -p ${p_out_dir_logs}
+        mkdir -p ${p_out_dir_logs}tmp/
         cmd_run_combine+="sbatch \
-                          -o ${p_out_dir_logs}combine_networks_%J.out \
-                          -e ${p_out_dir_logs}combine_networks_%J.err \
-                          -J ${data}_combine \
-                          --mail-type=${mail_type} \
-                          --mail-user=${mail_user} \
-                          --mem=${combine_slurm_mem} \
-                          --nodes=${combine_slurm_nodes} \
-                          --cpus-per-task=${combine_slurm_cpus_per_task} \
-                          --ntasks-per-node=${combine_slurm_ntasks_per_node} \
-                          --dependency=afterok:${job_id_pwm}:${job_id_bart}:${job_id_lasso} "
+            -o ${p_out_dir_logs}combine_networks_%J.out \
+            -e ${p_out_dir_logs}combine_networks_%J.err \
+            -D ${p_out_dir_logs}tmp/ \
+            -J ${data}_combine \
+            --mail-type=${mail_type} \
+            --mail-user=${mail_user} \
+            --mem=${combine_slurm_mem} \
+            --dependency=afterok:${job_id_pwm}:${job_id_bart}:${job_id_lasso} "
+        if [ ${flag_training} == "ON-CV" ]; then
+            cmd_run_combine+="--nodes=1-${combine_slurm_nodes} \
+                              --cpus-per-task=${combine_slurm_cpus_per_task} \
+                              --ntasks-per-node=${combine_slurm_ntasks_per_node} "
+        elif [ ${flag_training} == "ON-INT" ]; then
+            cmd_run_combine+="--ntasks=${combine_slurm_ntasks} \
+                              --nodes=1-${combine_slurm_nodes} "
+        elif [ ${flag_training} == "ON-SUB" ]; then
+            cmd_run_combine+=""
+        fi
     fi
     cmd_run_combine+="${p_src_code}src/combine_networks/workflow/combine_networks.sh \
                       --p_in_binding_event ${p_in_binding_event} \
@@ -499,6 +512,7 @@ then
                       --flag_debug ${flag_debug} \
                       --flag_slurm ${flag_slurm} \
                       --slurm_ntasks_per_node ${combine_slurm_ntasks_per_node} \
+                      --slurm_ntasks ${combine_slurm_ntasks} \
                       --slurm_cpus_per_task ${combine_slurm_cpus_per_task} \
                       --slurm_nodes ${combine_slurm_nodes} \
                       --slurm_mem ${combine_slurm_mem} \

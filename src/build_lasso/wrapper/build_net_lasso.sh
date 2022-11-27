@@ -37,8 +37,8 @@ if [ ${flag_singularity} == "ON" ]; then
     cmd+="singularity exec ${p_singularity_img} "
 elif [ ${flag_singularity} == "OFF" ]; then
     if [ ${flag_slurm} == "ON" ]; then 
-    source ${p_src_code}src/helper/load_modules.sh
-#     cmd+="mpirun -np ${SLURM_NTASKS} "
+        source ${p_src_code}src/helper/load_modules.sh
+        cmd+="mpirun -np 1 "
     fi
 fi
 

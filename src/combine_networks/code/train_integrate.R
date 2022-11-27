@@ -1,3 +1,14 @@
+.Last <- function(){
+       if (is.loaded("mpi_initialize")){
+           if (mpi.comm.size(1) > 0){
+               print("Please use mpi.close.Rslaves() to close slaves.")
+               mpi.close.Rslaves()
+           }
+           print("Please use mpi.quit() to quit R")
+           .Call("mpi_finalize")
+       }
+}
+
 train_integrate = function(idx_per_slave){
     
     # load libraries
@@ -120,7 +131,7 @@ if (sys.nframe() == 0){
     # |          *** load required libraries ***           | #
     # ====================================================== #
     library("optparse")
-    
+    library("Rmpi")
     
     # ====================================================== #
     # |               *** Parse Arguments ***              | #
@@ -155,9 +166,10 @@ if (sys.nframe() == 0){
     l_in_name_net = opt$l_in_name_net
     l_in_path_net = opt$l_in_path_net
     nbr_reg = opt$in_nbr_reg
-    slurm_ntasks = opt$slurm_ntasks
+    # slurm_ntasks = opt$slurm_ntasks
     p_out_pred = opt$p_out_pred
     seed = opt$seed
+    slurm_ntasks <- mpi.universe.size() - 1
     
     # read data
     # read binding data
@@ -177,11 +189,13 @@ if (sys.nframe() == 0){
     }
     
     # load library
-    library("Rmpi")
+    
     set.seed(seed)
     l_tf_indexes = sample(seq(length(l_reg)), length(l_reg), replace=FALSE) # randomize tfs
     idx_per_train = suppressWarnings(split(l_tf_indexes, seq(integer(length(l_reg)/nbr_reg))))  # reg indexes per training
     idx_per_slave = suppressWarnings(split(seq(length(idx_per_train)), seq(slurm_ntasks))) # reg indexes per training per slave
+    
+    
     
     mpi.spawn.Rslaves(nslaves=slurm_ntasks)
     
@@ -196,8 +210,8 @@ if (sys.nframe() == 0){
                               , simplify=TRUE
                               , comm=1
                               , ret=TRUE)
-    mpi.close.Rslaves()
-    
+    mpi.close.Rslaves(dellog = FALSE)
+    mpi.quit()
     # collect results from slaves and concatenate results
     df_net = l_slave[[1]]
     for (slave_idx in seq(2, slurm_ntasks, 1)){

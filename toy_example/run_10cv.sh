@@ -10,8 +10,9 @@ ${p_src_code}np3 -c \
     --l_in_path_net "${p_out_dir}features/net_lasso.tsv,${p_src_code}toy_example/data_zev_de_shrunken_50_500_indexed,${p_out_dir}features/net_bart.tsv,${p_out_dir}features/net_pwm.tsv" \
     --flag_training ON-CV \
     --combine_cv_nbr_fold 10 \
-    --p_out_dir ${p_out_dir}10cv_new/ \
+    --p_out_dir ${p_out_dir}10cv/ \
     --flag_singularity OFF \
     --flag_slurm ON \
     --p_out_dir_logs ${p_out_dir}log/ \
     --data toy_example_10cv \
+    --combine_slurm_nodes 10

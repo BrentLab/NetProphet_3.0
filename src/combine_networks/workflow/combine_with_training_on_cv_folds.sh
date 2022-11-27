@@ -162,7 +162,6 @@ then
         --flag_debug ${flag_debug} \
         --p_progress ${p_progress} \
         --flag_slurm ${flag_slurm} \
-        --slurm_ntasks_per_node ${slurm_ntasks_per_node} \
         --flag_penalize ${flag_penalize} \
         --flag_singularity ${flag_singularity} \
         --p_singularity_img ${p_singularity_img} \
@@ -226,8 +225,7 @@ then
             --flag_singularity ${flag_singularity} \
             --p_singularity_img ${p_singularity_img} \
             --p_singularity_bindpath ${p_singularity_bindpath} \
-            --flag_slurm ${flag_slurm} \
-            --slurm_ntasks_per_node ${slurm_ntasks_per_node} &"
+            --flag_slurm ${flag_slurm} &"
         
         # parallelization control of running jobs:
         nbr_running_jobs=$(jobs -p | wc -l)

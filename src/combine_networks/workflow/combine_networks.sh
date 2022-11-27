@@ -95,6 +95,9 @@ do
                 slurm_ntasks_per_node)
                   slurm_ntasks_per_node="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
+                slurm_ntasks)
+                  slurm_ntasks="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                  ;;
                 slurm_cpus_per_task)
                   slurm_cpus_per_task="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
                   ;;
@@ -264,8 +267,7 @@ elif [ ${flag_training} == "ON-INT" ]; then
                           --p_out_dir ${p_out_dir}tmp_combine/network_construction/ \
                           --seed ${seed} \
                           --flag_slurm ${flag_slurm} \
-                          --slurm_ntasks ${slurm_ntasks_per_node} \
-                          --slurm_nbr_cpus ${slurm_cpus_per_task} \
+                          --slurm_ntasks ${slurm_ntasks} \
                           --slurm_mem ${slurm_mem} \
                           --flag_singularity ${flag_singularity} \
                           --p_singularity_img ${p_singularity_img} \

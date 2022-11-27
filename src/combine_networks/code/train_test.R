@@ -700,7 +700,7 @@ if (sys.nframe() == 0){
         # logistics
         , p_src_code = make_option(c("--p_src_code"), type="character", help="path of source of code for netprophet")
         , nbr_job = make_option(c("--nbr_job"), type="integer", default=2, help="number of tasks/jobs running in parallel")
-        , nbr_cores = make_option(c("--nbr_cores"), type="integer", help="nbr of cores for mc.lbart")
+        , nbr_cores = make_option(c("--nbr_cores"), type="integer", default=2, help="nbr of cores for mc.lbart")
         
         # prediction parameters/options
         , flag_intercept = make_option(c("--flag_intercept"), type="character", help="ON or OFF for intercept generation")

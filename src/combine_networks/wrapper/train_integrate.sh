@@ -94,6 +94,7 @@ if [ ${flag_singularity} == "ON" ]; then
 elif [ ${flag_singularity} == "OFF" ]; then
     if [ ${flag_slurm} == "ON" ]; then 
         source ${p_src_code}src/helper/load_modules.sh
+        cmd+="mpirun -np 1 "
     fi
 fi
 

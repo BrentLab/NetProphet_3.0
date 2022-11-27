@@ -13,7 +13,7 @@ p_src_code=${7}
 flag_singularity=${8}
 p_singularity_img=${9}
 p_singularity_bindpath=${10}
-nbr_rmpi_slave=${11}
+nbr_rmpi_slave=$(( ${11} - 1 ))
 
 # =========================================================================== #
 # |                        **** BUILD BART ****                             | #
@@ -25,7 +25,10 @@ if [ ${flag_singularity} == "ON" ]; then
     export SINGULARITY_BINDPATH=${p_singularity_bindpath}
     cmd+="singularity exec ${p_singularity_img} "
 elif [ ${flag_singularity} == "OFF" ]; then
-    if [ ${flag_slurm} == "ON" ]; then source ${p_src_code}src/helper/load_modules.sh; fi
+    if [ ${flag_slurm} == "ON" ]; then 
+        source ${p_src_code}src/helper/load_modules.sh;
+        cmd+="mpirun -np 1 "
+    fi
 fi
 
 cmd+="Rscript --no-save --vanilla ${p_src_code}src/build_bart/code/build_net_bart.R \
@@ -38,5 +41,5 @@ cmd+="Rscript --no-save --vanilla ${p_src_code}src/build_bart/code/build_net_bar
      --p_src_code ${p_src_code} \
      --nbr_rmpi_slave ${nbr_rmpi_slave}"
 
-echo "${cmd}"
+# echo "${cmd}"
 eval ${cmd}     

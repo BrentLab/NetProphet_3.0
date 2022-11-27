@@ -1,3 +1,15 @@
+ # In case R exits unexpectedly, have it automatically clean up
+# resources taken up by Rmpi (slaves, memory, etc...)
+.Last <- function(){
+       if (is.loaded("mpi_initialize")){
+           if (mpi.comm.size(1) > 0){
+               print("Please use mpi.close.Rslaves() to close slaves.")
+               mpi.close.Rslaves()
+           }
+           print("Please use mpi.quit() to quit R")
+           .Call("mpi_finalize")
+       }
+}
 # if (!require("R.oo")) try(install.packages("R.oo"));
 # if (!require("Rmpi")) try(install.packages("Rmpi"));
 # if (!require("BayesTree")) try(install.packages("BayesTree"));
@@ -100,7 +112,7 @@ bartExpr <- function(tgtLevel, tfLevel, testTfLevel, regMat, ntree, verbose = TR
 			}
 		}
 	}
-	print("outside if")
+
 	# calling BART
 	# barted <- bartMultiresponse(x.train = log(tfLevel), y.train = transform(tgtLevel), x.test = log(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE,...); 
 	barted <- bartMultiresponse(x.train = transform(tfLevel), y.train = transform(tgtLevel), x.test = transform(testTfLevel), allowed = regMat, verbose = verbose, simplify = TRUE, ntree=ntree, ...); 
@@ -206,6 +218,7 @@ bartMultiresponse <- function(x.train, y.train, ntree, x.test = NULL, allowed, s
 			bartedList <- c(bartedList, mpi.apply(blockIxList[[i]], applicand, simplify = simplify, verbose = pmax(verbose - 1, 0), comm = mpiComm, ...));
 			if (!missing(saveTo) && !is.null(saveTo)) save(bartedList, file = saveTo);
 		}
+        mpi.close.Rslaves(dellog=FALSE)
 	}
 	names(bartedList) <- responseName;
 	bartedList <- lapply(bartedList, as.list); # in case one bart call returns an error message, the error message will be covnerted to a list

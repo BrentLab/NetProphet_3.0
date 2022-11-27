@@ -9,8 +9,9 @@ ${p_src_code}np3 -l \
     --p_in_expr_target ${p_src_code}toy_example/data_zev_expr_500_100_indexed \
     --p_in_expr_reg ${p_src_code}toy_example/data_zev_expr_reg_50_100_indexed \
     --p_out_dir ${p_out_dir} \
-    --flag_singularity OFF \
+    --flag_singularity ON \
+    --p_singularity_img ${p_src_code}singularity/s_np3.sif \
+    --p_singularity_bindpath ${p_src_code} \
     --flag_slurm ON \
     --p_out_dir_logs ${p_out_dir}log/ \
-    --data toy_example \
-    --lasso_slurm_nodes 5
+    --data toy_example

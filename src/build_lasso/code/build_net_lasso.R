@@ -298,5 +298,3 @@ if (sys.nframe() == 0){
                                  , idx_reg_greenfield=idx_reg_greenfield
                                  ))
 }
-
-

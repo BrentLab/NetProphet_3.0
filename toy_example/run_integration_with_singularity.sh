@@ -11,10 +11,10 @@ ${p_src_code}np3 -c \
     --flag_training ON-INT \
     --in_nbr_reg 1 \
     --p_out_dir ${p_out_dir}integration/ \
-    --flag_singularity OFF \
+    --flag_singularity ON \
+    --p_singularity_img ${p_src_code}singularity/s_np3.sif \
+    --p_singularity_bindpath ${p_src_code} \
     --flag_slurm ON \
     --p_out_dir_logs ${p_out_dir}log/ \
     --data toy_example_integration \
-    --flag_debug ON \
-    --combine_slurm_ntasks 32 \
-    --combine_slurm_nodes 10
+    --flag_debug ON
