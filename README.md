@@ -1,12 +1,12 @@
 # NetProphet 3.0
-NetProphet3.0 is network inference package, first it generates different networks by regression algorithms (LASSO and BART), and other algorithms (PWM). Then, it combines these networks in one final network. The easiest way to run NetProphet3 is with **singularity container**. After installing singularity, you load the container below and start running NetProphet3.0. The more advanced way is by installing all dependencies of NetProphet 3.0.
+NetProphet3.0 is a package for network inference: first, it generates intermediate networks by regression and other algorithms LASSO, DE, BART, PWM. Then, it combines them into one final network using XGboost, a supervised ML. The easiest way to run NetProphet3 is with the **singularity container**, as demonstrated below. Steps are easy: first install the singularity software, then pull the container, you will be ready to run NetProphet3. 
 
 # I. Install NetProphet 3.0
 
 ## The easiest, with Singularity container
 
 - Refer to Singularity [website](https://singularity.hpcng.org/user-docs/3.6/quick_start.html#quick-installation-steps) and install singularity >=3.5.2
-- load s_np container from sylab cloud with this command
+- load the `s_np` container from the sylab cloud with this command
    ``` 
    singularity pull library://dabid/default/s_np3:sha256.e14c3a078c052932b5e2a840beea1fa5b8798db5668e196d8e297b223b6390d3
    ```
@@ -15,15 +15,15 @@ NetProphet3.0 is network inference package, first it generates different network
    mv s_np3_sha256.e14c3a078c052932b5e2a840beea1fa5b8798db5668e196d8e297b223b6390d3.sif s_np3.sif
    ```
 
-## More advanced, install all dependencies
+## The more advanced, here, all dependencies have to be installed
 Refer to this wiki [page](https://github.com/BrentLab/NetProphet_3.0/wiki/Advanced-Installation) for installing NetProphet dependencies
 
 
 # II. Run NetProphet 3.0
-Clone NetProphet3.0 in a path in your computer and let's call that path ${p_src_code}
+Clone NetProphet3.0 in a path in your computer, let's call that path ${p_src_code}
 
 ## With a toy example
-This NetProphet3.0 command assumes that singularity container will be used and that's why ``` --flag_singularity ON ```.  
+This is an example of NetProphet3.0 combination command, it assumes that the singularity container will be used and that's why ``` --flag_singularity ON ```. Refer to the folder ${p_src_code}toy_example, for commands of each of the NetProphet3 modules; they can be run with and without singularity.  
 ```
 p_wd=/scratch/mblab/dabid/proj_net/
 p_src_code=${p_wd}code/NetProphet_3.0/
@@ -36,23 +36,20 @@ ${p_src_code}np3 -c \
     --flag_training ON-CV \
     --combine_cv_nbr_fold 10 \
     --p_out_dir ${p_out_dir}10cv/ \
-    --flag_singularity OFF \
-    --flag_slurm ON \
-    --p_out_dir_logs ${p_out_dir}log/ \
-    --data toy_example_10cv \
+    --flag_singularity ON \
+    --p_singularity_img /path/singularity/image \
+    --p_singularity_bindpath /your/home/dir/ \
+    --flag_slurm OFF
 ```
 ## More about np3 command and options
-- Usage: 
-```
-./${p_src_code}np3 -h 
-```
-- [NetProphet3.0 with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
-- [NetProphet3.0 with Singularity](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-Singularity)
-- NetProphet3.0 combination method
-    - [Train with 10CV](https://github.com/BrentLab/NetProphet_3.0/wiki/10cv)
+- Help usage: ` ./${p_src_code}np3 -h`
+- [NetProphet3.0: with SLURM environment](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-SLURM-environment)
+- [NetProphet3.0: with Singularity](https://github.com/BrentLab/NetProphet_3.0/wiki/NetProphet-with-Singularity)
+- NetProphet3.0: combination method
+    - [Train for 10CV](https://github.com/BrentLab/NetProphet_3.0/wiki/10cv)
     - [Train for integration](https://github.com/BrentLab/NetProphet_3.0/wiki/integration)
-    - [No Training, use a pre-built model (yeast)](https://github.com/BrentLab/NetProphet_3.0/wiki/yeast_model)
-- NetProphet3.0 other modules
+    - [No Training, use a pre-built model (yeast)](https://github.com/BrentLab/NetProphet_3.0/wiki/prebuilt_yeast_model)
+- NetProphet3.0: construction of intermediate networks
     - [LASSO](https://github.com/BrentLab/NetProphet_3.0/wiki/LASSO)
     - [BART](https://github.com/BrentLab/NetProphet_3.0/wiki/BART)
     - [PWM](https://github.com/BrentLab/NetProphet_3.0/wiki/PWM) 
